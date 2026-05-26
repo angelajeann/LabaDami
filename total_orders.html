@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Total Orders - Laundry Management System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="hero-content">
+            <style>
+                /* Background blur layer */
+                body::before {
+                    content: '';
+                    position: fixed;
+                    top: 120px;
+                    left: 0;
+                    width: 100vw;
+                    height: 100vh;
+                background-image: url('Images/laundromat_bg.jpg');
+                background-size: cover;
+                background-position: center;
+                background-repeat: no-repeat;
+                filter: blur(8px) brightness(0.7);
+                z-index: -1;
+            }
+            body {
+                position: relative;
+            }
+        </style>
+        </div>
+    </header>
+    <nav>
+        <ul>
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="orders.html">Orders</a></li>
+            <li><a href="add_order.html">Add Orders</a></li>
+            <li><a href="notifications.html">Notifications</a></li>
+            <li><a href="sales_report.html">Sales Report</a></li>
+            <li><a href="history.html">History</a></li>
+            <li><a href="stats.html">Statistics</a></li>
+            <li><a href="index.html">Log Out</a></li>
+        </ul>
+    </nav>
+    <div class="container">
+        <h2>Total Orders</h2>
+        <p>Complete list of all orders in the system.</p>
+        
+        <div class="table-container">
+            <table id="totalOrdersTable">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Customer Name</th>
+                        <th>Email</th>
+                        <th>Service</th>
+                        <th>Weight (kg)</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Date Created</th>
+                    </tr>
+                </thead>
+                <tbody id="totalOrdersBody">
+                    <tr>
+                        <td colspan="8" class="no-data">Loading orders...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3002/api';
+
+        function formatCurrency(amount) {
+            if (amount === null || amount === undefined || amount === '') return '-';
+            const value = parseFloat(amount);
+            return Number.isFinite(value) ? '₱' + value.toFixed(2) : '-';
+        }
+
+        async function loadTotalOrders() {
+            try {
+                const response = await fetch(`${API_BASE}/orders`);
+                if (!response.ok) throw new Error('Failed to fetch orders');
+                
+                const orders = await response.json();
+                const tbody = document.getElementById('totalOrdersBody');
+                
+                if (orders.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="no-data">No orders found</td></tr>';
+                    return;
+                }
+
+                let html = '';
+                orders.forEach((order) => {
+                    const date = new Date(order.created_at).toLocaleDateString();
+                    html += `
+                        <tr>
+                            <td>${order.id}</td>
+                            <td>${order.customerName}</td>
+                            <td><span class="contact-badge">${order.email || order.contactNumber || 'N/A'}</span></td>
+                            <td>${order.service}</td>
+                            <td>${order.weight}</td>
+                            <td>${formatCurrency(order.totalAmount)}</td>
+                            <td><span class="status-badge status-${order.status.toLowerCase().replace(' ', '-')}">${order.status}</span></td>
+                            <td>${date}</td>
+                        </tr>
+                    `;
+                });
+                
+                tbody.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading orders:', error);
+                document.getElementById('totalOrdersBody').innerHTML = '<tr><td colspan="8" style="color: red;">Error loading orders. Check if server is running.</td></tr>';
+            }
+        }
+
+        // Load orders when page loads
+        document.addEventListener('DOMContentLoaded', loadTotalOrders);
+    </script>

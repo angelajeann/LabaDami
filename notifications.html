@@ -1,0 +1,370 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications - Laundry Management System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <style>
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-image: url('Images/bubbles.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            filter: blur(8px) brightness(0.7);
+            z-index: -1;
+        }
+        body {
+            position: relative;
+        }
+    </style>
+    <nav>
+        <div style="padding: 0 0 14px;">
+            <a href="dashboard.html" style="text-decoration:none; color:#ffffff; display:block;">
+                <h1 style="margin: 0 0 6px; font-family: 'Poppins', sans-serif; font-size: 28px; color: #ffffff;">LabaDami</h1>
+                <h2 style="margin: 0 0 4px; font-size: 14px; font-weight: 700; color: #dbe8ff;">Quick and Quality Laundry Services</h2>
+                <p style="margin: 0; font-size: 11px; color: rgba(219,232,255,0.9); line-height: 1.2;">Track every load. Serve every customer better.</p>
+            </a>
+        </div>
+        <ul>
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="orders.html">Orders</a></li>
+            <li><a href="add_order.html">Add Order</a></li>
+            <li><a href="notifications.html">Notifications</a></li>
+            <li><a href="sales_report.html">Sales Report</a></li>
+            <li><a href="history.html">History</a></li>
+            <li><a href="stats.html">Statistics</a></li>
+            <li><a href="index.html">Log Out</a></li>
+        </ul>
+    </nav>
+    <div class="container">
+        <h2>Notifications - Ready for Pickup</h2>
+        <p>Notify customers when their laundry is ready for pickup</p>
+
+        <!-- Pending Orders Section -->
+        <div class="notification-section">
+            <h3>Pending Orders - Mark Ready & Notify</h3>
+            <div class="table-container">
+                <table id="pendingOrdersTable">
+                    <thead>
+                        <tr>
+                            <th>Customer Name</th>
+                            <th>Contact Number</th>
+                            <th>Service</th>
+                            <th>Weight (kg)</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pendingOrdersBody">
+                        <tr>
+                            <td colspan="7" class="no-data">Loading pending orders...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Ready Orders Section -->
+        <div class="notification-section">
+            <h3>Ready Orders - Notify Customer</h3>
+            <div class="table-container">
+                <table id="readyOrdersTable">
+                    <thead>
+                        <tr>
+                            <th>Customer Name</th>
+                            <th>Contact Number</th>
+                            <th>Service</th>
+                            <th>Weight (kg)</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="readyOrdersBody">
+                        <tr>
+                            <td colspan="7" class="no-data">Loading ready orders...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Notification History Section -->
+        <div class="notification-section">
+            <h3>Notification History</h3>
+            <div id="notificationHistoryContainer">Loading notification history...</div>
+        </div>
+    </div>
+
+    <!-- Notification Modal -->
+    <div id="notificationModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3>Send Notification & SMS</h3>
+            
+            <div class="modal-info">
+                <p><strong>Customer:</strong> <span id="modalCustomerName">-</span></p>
+                <p><strong>Contact Number:</strong> <span id="modalContactNumber">-</span></p>
+                <p><strong>Service:</strong> <span id="modalService">-</span></p>
+                <p><strong>Amount:</strong> <span id="modalTotalAmount">₱0.00</span></p>
+            </div>
+
+            <textarea id="messageText" placeholder="Type your custom message here (optional)"></textarea>
+            
+            <div class="button-group">
+                <button id="sendNotificationBtn">Send Notification & SMS</button>
+                <button class="btn-cancel" id="cancelModalBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3002/api';
+        let currentOrderId = null;
+        let pendingOrders = [];
+        let readyOrders = [];
+        const modal = document.getElementById('notificationModal');
+
+        function formatCurrency(amount) {
+            if (amount === null || amount === undefined || amount === '') return '₱0.00';
+            const value = parseFloat(amount);
+            return Number.isFinite(value) ? '₱' + value.toFixed(2) : '₱0.00';
+        }
+
+        function closeModal() {
+            modal.style.display = 'none';
+        }
+
+        document.querySelector('.close').addEventListener('click', closeModal);
+        window.addEventListener('click', (e) => {
+            if (e.target === modal) modal.style.display = 'none';
+        });
+        document.getElementById('cancelModalBtn').addEventListener('click', closeModal);
+
+        async function initializeNotifications() {
+            await loadPendingOrders();
+            await loadReadyOrders();
+            await loadNotificationHistory();
+        }
+
+        async function loadPendingOrders() {
+            try {
+                const response = await fetch(`${API_BASE}/orders/status/pending`);
+                if (!response.ok) throw new Error('Failed to fetch orders');
+                pendingOrders = await response.json();
+
+                const tbody = document.getElementById('pendingOrdersBody');
+                if (pendingOrders.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="no-data">No pending orders</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = pendingOrders.map(order => `
+                    <tr>
+                        <td>${order.customerName}</td>
+                        <td><span class="contact-badge">${order.contactNumber || 'N/A'}</span></td>
+                        <td>${order.service}</td>
+                        <td>${order.weight}</td>
+                        <td>${formatCurrency(order.totalAmount)}</td>
+                        <td>
+                            <select class="status-select" onchange="updateOrderStatus(${order.id}, this.value)">
+                                <option value="Pending" ${order.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                                <option value="Processing" ${order.status === 'Processing' ? 'selected' : ''}>Processing</option>
+                                <option value="Ready" ${order.status === 'Ready' ? 'selected' : ''}>Ready</option>
+                                <option value="Picked Up" ${order.status === 'Picked Up' ? 'selected' : ''}>Picked Up</option>
+                                <option value="On Hold" ${order.status === 'On Hold' ? 'selected' : ''}>On Hold</option>
+                            </select>
+                        </td>
+                        <td><button class="btn-notify-small" onclick="openNotificationModal(${order.id})">Notify</button></td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading pending orders:', error);
+                document.getElementById('pendingOrdersBody').innerHTML = '<tr><td colspan="7" style="color:red;">Error loading orders. Make sure server is running.</td></tr>';
+            }
+        }
+
+        async function loadReadyOrders() {
+            try {
+                const response = await fetch(`${API_BASE}/orders/status/ready`);
+                if (!response.ok) throw new Error('Failed to fetch ready orders');
+                readyOrders = await response.json();
+
+                const tbody = document.getElementById('readyOrdersBody');
+                if (readyOrders.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="no-data">No ready orders</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = readyOrders.map(order => `
+                    <tr>
+                        <td>${order.customerName}</td>
+                        <td><span class="contact-badge">${order.contactNumber || 'N/A'}</span></td>
+                        <td>${order.service}</td>
+                        <td>${order.weight}</td>
+                        <td>${formatCurrency(order.totalAmount)}</td>
+                        <td><span class="status-badge ready">${order.status}</span></td>
+                        <td><button class="btn-notify-small" onclick="openNotificationModal(${order.id})">Notify</button></td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading ready orders:', error);
+                document.getElementById('readyOrdersBody').innerHTML = '<tr><td colspan="7" style="color:red;">Error loading ready orders.</td></tr>';
+            }
+        }
+
+        async function updateOrderStatus(orderId, newStatus) {
+            try {
+                const response = await fetch(`${API_BASE}/orders/${orderId}/status`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                if (!response.ok) throw new Error('Failed to update status');
+                await loadPendingOrders();
+                await loadReadyOrders();
+            } catch (error) {
+                console.error('Error updating order status:', error);
+                alert('Error updating order status: ' + error.message);
+            }
+        }
+
+        function openNotificationModal(orderId) {
+            const order = [...pendingOrders, ...readyOrders].find(o => o.id === orderId);
+            if (!order) {
+                alert('Order not found');
+                return;
+            }
+
+            currentOrderId = orderId;
+            document.getElementById('modalCustomerName').textContent = order.customerName || '-';
+            document.getElementById('modalContactNumber').textContent = order.contactNumber || '-';
+            document.getElementById('modalService').textContent = order.service || '-';
+            document.getElementById('modalTotalAmount').textContent = formatCurrency(order.totalAmount);
+            document.getElementById('messageText').value = '';
+            modal.style.display = 'block';
+        }
+
+        // ...existing code...
+        async function sendNotification() {
+            try {
+                const order = [...pendingOrders, ...readyOrders].find(o => o.id === currentOrderId);
+                if (!order) throw new Error('Order not found');
+
+                if (!order.contactNumber) {
+                    throw new Error('Customer contact number not available. Please add contact number to customer profile.');
+                }
+
+                const customMessage = document.getElementById('messageText').value.trim();
+                const defaultMessage = `Hi ${order.customerName}, your laundry is ready for pickup! Service: ${order.service}. Total: ${formatCurrency(order.totalAmount)}.`;
+                const messageToSend = customMessage || defaultMessage;
+
+                const notifResponse = await fetch(`${API_BASE}/notifications`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        order_id: order.id,
+                        customer_id: order.customer_id,
+                        contactNumber: order.contactNumber,
+                        message: messageToSend
+                    })
+                });
+
+                if (!notifResponse.ok) {
+                    const text = await notifResponse.text();
+                    throw new Error(text || 'Failed to save notification');
+                }
+
+               const smsResponse = await fetch(`${API_BASE}/notifications`, {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+        order_id: order.id,
+        customer_id: order.customer_id,
+        contactNumber: order.contactNumber,
+        message: messageToSend
+    })
+});
+
+                if (!smsResponse.ok) {
+                    const text = await smsResponse.text();
+                    throw new Error(text || 'Failed to send SMS');
+                }
+
+                alert(`✓ Notification & SMS sent to ${order.customerName}`);
+                closeModal();
+                await loadPendingOrders();
+                await loadReadyOrders();
+                await loadNotificationHistory();
+            } catch (error) {
+                console.error('Error sending notification:', error);
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function loadNotificationHistory() {
+            try {
+                const response = await fetch(`${API_BASE}/notifications`);
+                if (!response.ok) throw new Error('Failed to fetch notifications');
+                const notifications = await response.json();
+
+                const container = document.getElementById('notificationHistoryContainer');
+                if (!notifications.length) {
+                    container.innerHTML = '<p>No notifications have been sent yet.</p>';
+                    return;
+                }
+
+                container.innerHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Customer</th>
+                                <th>contactNumber</th>
+                                <th>Message</th>
+                                <th>Sent At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${notifications.map(item => `
+                                <tr>
+                                    <td>${item.customerName}</td>
+                                    <td>${item.contactNumber || 'N/A'}</td>
+                                    <td>${item.message}</td>
+                                    <td>${(() => {
+                                        const date = new Date(item.created_at);
+                                        return isNaN(date.getTime()) ? 'Invalid date' : date.toLocaleString();
+                                    })()}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (error) {
+                console.error('Error loading notification history:', error);
+                document.getElementById('notificationHistoryContainer').innerHTML = '<p style="color:red;">Unable to load notification history.</p>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initializeNotifications);
+
+        // Attach event listener for send notification button (ensure sendNotification is defined)
+        document.getElementById('sendNotificationBtn')?.addEventListener('click', () => {
+            sendNotification();
+        });
+    </script>
+</body>
+</html>
+

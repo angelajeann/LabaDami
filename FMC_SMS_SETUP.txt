@@ -1,0 +1,23 @@
+FMC SMS SETUP
+
+1. Open server/.env
+
+2. Add:
+
+FMC_SMS_API_URL=YOUR_API_ENDPOINT
+FMC_SMS_API_KEY=YOUR_API_KEY
+FMC_SMS_SENDER=LaundryShop
+
+3. Install dependencies:
+
+npm install
+
+4. Start server:
+
+npm start
+
+5. Open browser:
+
+http://localhost:3002
+
+SMS notifications now use FMC SMS instead of email/Twilio.

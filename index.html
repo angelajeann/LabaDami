@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laundry Shop Management System</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Great+Vibes&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-image: url('Images/bubbles.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: repeat;
+            filter: blur(2px) brightness(.55);
+            z-index: -1;
+        }
+        body {
+            position: relative;
+        }
+        header {
+            backdrop-filter: blur(10px);
+            color: #333;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+        header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            background: linear-gradient(135deg, #263475 0%, rgb(31, 64, 153) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .login-wrapper {
+            display: flex;
+            min-height: 100vh;
+            align-items: center;
+            padding-top: 80px; /* Account for fixed header */
+        }
+        .login-left {
+            width: 45%;
+            background: linear-gradient(135deg, #183557 0%, #312670 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 60px 40px;
+            color: white;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .login-left::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+            50% { transform: translate(-50%, -50%) rotate(180deg); }
+        }
+        .login-left h2 {
+            font-size: 80px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 2;
+        }
+        .login-left .tagline {
+            font-size: 28px;
+            font-family: 'Great Vibes', cursive;
+            margin-bottom: 15px;
+            font-weight: 400;
+            opacity: 0.95;
+            position: relative;
+            z-index: 2;
+        }
+        .login-left .subtitle {
+            font-size: 18px;
+            opacity: 0.9;
+            line-height: 1.6;
+            max-width: 300px;
+            position: relative;
+            z-index: 2;
+        }
+        .login-right {
+            width: 50%;
+            background: url('bubbles.jpg') center/contain no-repeat;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: 60px 40px;
+        }
+        .login-right::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        }
+        .login-form {
+            position: relative;
+            z-index: 1;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 50px 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 420px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .login-form h3 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+            font-weight: 600;
+            color: #333;
+            background: linear-gradient(135deg, #495aa1 0%, #1c304b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+            
+        .form-group {
+            margin-bottom: 25px;
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #333;
+            font-size: 16px;
+        }
+        input {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e1e8ed;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+        }
+        input:focus {
+            outline: none;
+            border-color: #212b58;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+        button {
+            width: 100%;
+            background: linear-gradient(135deg, #141c41 0%, #29336b 100%);
+            color: white;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        button:hover::before {
+            left: 100%;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+        @media (max-width: 768px) {
+            header {
+                padding: 15px 20px;
+            }
+            header h1 {
+                font-size: 20px;
+            }
+            .login-wrapper {
+                flex-direction: column;
+                padding-top: 100px;
+            }
+            .login-left, .login-right {
+                width: 100%;
+                min-height: 50vh;
+            }
+            .login-left {
+                padding: 40px 20px;
+            }
+            .login-left h2 {
+                font-size: 60px;
+            }
+            .login-left .tagline {
+                font-size: 24px;
+            }
+            .login-left .subtitle {
+                font-size: 16px;
+            }
+            .login-right {
+                padding: 40px 20px;
+            }
+            .login-form {
+                padding: 30px 20px;
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Laundry Shop Management System</h1>
+    </header>
+    <div class="login-wrapper">
+        <div class="login-left">
+            <h2>LabaDami</h2>
+            <p class="corner-tagline">LabaDami quick and quality laudry services track every load, serve every customer better</p>
+            <p class="tagline">Quick and quality laundry services</p>
+            <p class="subtitle">Track Every Load. Serve Every Customer Better.</p>
+        </div>
+        <div class="login-right">
+            <form class="login-form" id="loginForm">
+                <h3>Welcome Back</h3>
+                <div class="form-group">
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" required placeholder="Enter your username">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" required placeholder="Enter your password">
+                </div>
+                <button type="submit">Log In</button>
+            </form>
+        </div>
+    </div>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            if (username === 'admin' && password === 'admin') {
+                window.location.href = 'dashboard.html';
+            } else {
+                alert('Invalid credentials');
+            }
+        });
+    </script>
+</body>
+</html>

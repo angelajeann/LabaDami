@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orders - Laundry Management System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <style>
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-image: url('Images/bubbles.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            filter: blur(8px) brightness(0.7);
+            z-index: -1;
+        }
+        body {
+            position: relative;
+        }
+    </style>
+    <a href="dashboard.html" class="brand-link" aria-label="LabaDami">
+        <div class="brand-top-left">
+            <h1 class="brand-title">LabaDami</h1>
+            <h2 class="brand-subtitle">Quick and Quality Laundry Services</h2>
+            <p class="brand-tagline">Track every load. Serve every customer better.</p>
+        </div>
+    </a>
+
+    <nav>
+        <ul>
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="orders.html">Orders</a></li>
+            <li><a href="add_order.html">Add Orders</a></li>
+            <li><a href="notifications.html">Notifications</a></li>
+            <li><a href="sales_report.html">Sales Report</a></li>
+            <li><a href="history.html">History</a></li>
+            <li><a href="stats.html">Statistics</a></li>
+            <li><a href="index.html">Log Out</a></li>
+        </ul>
+    </nav>
+    <div class="container">
+        <h2>Orders</h2>
+        <p>View and manage current orders.</p>
+        
+        <div class="table-container">
+            <table id="ordersTable">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Customer Name</th>
+                        <th>Email</th>
+                        <th>Service</th>
+                        <th>Weight (kg)</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="ordersBody">
+                    <tr>
+                        <td colspan="9" class="no-data">Loading orders...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3002/api';
+
+        function formatCurrency(amount) {
+            if (amount === null || amount === undefined || amount === '') return '-';
+            const value = parseFloat(amount);
+            return Number.isFinite(value) ? '₱' + value.toFixed(2) : '-';
+        }
+
+        async function loadOrders() {
+            try {
+                const response = await fetch(`${API_BASE}/orders`);
+                if (!response.ok) throw new Error('Failed to fetch orders');
+                
+                const orders = await response.json();
+                const tbody = document.getElementById('ordersBody');
+                
+                if (orders.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="9" class="no-data">No orders found</td></tr>';
+                    return;
+                }
+
+                let html = '';
+                orders.forEach((order) => {
+                    const date = new Date(order.created_at).toLocaleDateString();
+                    html += `
+                        <tr>
+                            <td>${order.id}</td>
+                            <td>${order.customerName}</td>
+                            <td><span class="contact-badge">${order.email || order.contactNumber || 'N/A'}</span></td>
+                            <td>${order.service}</td>
+                            <td>${order.weight}</td>
+                            <td>${formatCurrency(order.totalAmount)}</td>
+                            <td>
+                                <select class="status-select" onchange="updateOrderStatus(${order.id}, this.value)">
+                                    <option value="Pending" ${order.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                                    <option value="Processing" ${order.status === 'Processing' ? 'selected' : ''}>Processing</option>
+                                    <option value="Ready" ${order.status === 'Ready' ? 'selected' : ''}>Ready</option>
+                                    <option value="Picked Up" ${order.status === 'Picked Up' ? 'selected' : ''}>Picked Up</option>
+                                    <option value="On Hold" ${order.status === 'On Hold' ? 'selected' : ''}>On Hold</option>
+                                </select>
+                            </td>
+                            <td>${date}</td>
+                            <td>
+                                <button class="btn-notify-small" onclick="notifyCustomer(${order.id})">Notify</button>
+                                <button class="btn-delete-small" onclick="deleteCustomerFromOrder(${order.customer_id})">Delete Customer</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                tbody.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading orders:', error);
+                document.getElementById('ordersBody').innerHTML = '<tr><td colspan="9" style="color: red;">Error loading orders. Check if server is running.</td></tr>';
+            }
+        }
+
+        async function updateOrderStatus(orderId, newStatus) {
+            try {
+                const response = await fetch(`${API_BASE}/orders/${orderId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                });
+
+                if (!response.ok) throw new Error('Failed to update status');
+                
+                console.log(`Order ${orderId} status updated to: ${newStatus}`);
+            } catch (error) {
+                console.error('Error updating order status:', error);
+                alert('Error updating order status: ' + error.message);
+            }
+        }
+
+        async function notifyCustomer(orderId) {
+            // Redirect to notifications page with the order ID
+            window.location.href = `notifications.html?order=${orderId}`;
+        }
+
+        async function deleteCustomerFromOrder(customerId) {
+            if (!customerId) {
+                alert('Customer id not available for this order.');
+                return;
+            }
+
+            const customerConfirm = confirm('Delete this customer? This will also delete all their orders and notifications.');
+            if (!customerConfirm) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/customers/${customerId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(text || 'Failed to delete customer');
+                }
+
+                alert('Customer deleted successfully.');
+                await loadOrders();
+            } catch (error) {
+                console.error('Error deleting customer:', error);
+                alert('Error deleting customer: ' + error.message);
+            }
+        }
+
+
+        // Load orders when page loads
+        document.addEventListener('DOMContentLoaded', loadOrders);
+    </script>

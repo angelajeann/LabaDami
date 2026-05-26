@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claimed Orders - Laundry Management System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+   
+
+    </header>
+    <nav>
+        <ul>
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="orders.html">Orders</a></li>
+            <li><a href="add_order.html">Add Orders</a></li>
+            <li><a href="notifications.html">Notifications</a></li>
+            <li><a href="sales_report.html">Sales Report</a></li>
+            <li><a href="history.html">History</a></li>
+            <li><a href="stats.html">Statistics</a></li>
+            <li><a href="index.html">Log Out</a></li>
+        </ul>
+    </nav>
+    <div class="container">
+        <h2>Claimed Orders</h2>
+        <p>Orders that have been successfully picked up by customers.</p>
+        
+        <div class="table-container">
+            <table id="claimedOrdersTable">
+                <thead>
+                <tr>
+                        <th>Order ID</th>
+                        <th>Customer Name</th>
+                        <th>Email</th>
+                        <th>Service</th>
+                        <th>Weight (kg)</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody id="claimedOrdersBody">
+                    <tr>
+                        <td colspan="8" class="no-data">Loading claimed orders...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = 'http://localhost:3002/api';
+
+        function formatCurrency(amount) {
+            if (amount === null || amount === undefined || amount === '') return '-';
+            const value = parseFloat(amount);
+            return Number.isFinite(value) ? '₹' + value.toFixed(2) : '-';
+        }
+
+        async function loadClaimedOrders() {
+            try {
+                const response = await fetch(`${API_BASE}/orders`);
+                if (!response.ok) throw new Error('Failed to fetch orders');
+                
+                const allOrders = await response.json();
+                const claimedOrders = allOrders.filter(order => order.status === 'Picked Up');
+                const tbody = document.getElementById('claimedOrdersBody');
+                
+                if (claimedOrders.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="no-data">No claimed orders yet</td></tr>';
+                    return;
+                }
+
+                let html = '';
+                claimedOrders.forEach((order) => {
+                    const date = new Date(order.created_at).toLocaleDateString();
+                    html += `
+                        <tr>
+                            <td>${order.id}</td>
+                            <td>${order.customerName}</td>
+                            <td><span class="contact-badge">${order.email || order.contactNumber || 'N/A'}</span></td>
+                            <td>${order.service}</td>
+                            <td>${order.weight}</td>
+                            <td>${formatCurrency(order.totalAmount)}</td>
+                            <td><span class="status-badge status-picked-up">${order.status}</span></td>
+                            <td>${date}</td>
+                        </tr>
+                    `;
+                });
+                
+                tbody.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading claimed orders:', error);
+                document.getElementById('claimedOrdersBody').innerHTML = '<tr><td colspan="8" style="color: red;">Error loading claimed orders. Check if server is running.</td></tr>';
+            }
+        }
+
+        // Load claimed orders when page loads
+        document.addEventListener('DOMContentLoaded', loadClaimedOrders);
+    </script>

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pending Laundry - Laundry Management System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <style>
+            body::before {
+                content: '';
+                position: fixed;
+                top: 120px;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background-image: url('bubbles.jpg');
+                background-size: cover;
+                background-position: center;
+                background-repeat: no-repeat;
+                filter: blur(8px) brightness(0.7);
+                z-index: -1;
+            }
+            body {
+                position: relative;
+            }
+        </style>
+        </div>
+    </header>
+    <nav>
+        <ul>
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="orders.html">Orders</a></li>
+            <li><a href="add_order.html">Add Orders</a></li>
+            <li><a href="notifications.html">Notifications</a></li>
+            <li><a href="sales_report.html">Sales Report</a></li>
+            <li><a href="history.html">History</a></li>
+            <li><a href="stats.html">Statistics</a></li>
+            <li><a href="index.html">Log Out</a></li>
+        </ul>
+    </nav>
+    <div class="container">
+        <h2>Pending Laundry</h2>
+        <p>Orders that are currently being processed or waiting to be processed.</p>
+        
+        <div class="table-container">
+            <table id="pendingOrdersTable">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Customer Name</th>
+                        <th>Email</th>
+                        <th>Service</th>
+                        <th>Weight (kg)</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="pendingOrdersBody">
+                    <tr>
+                        <td colspan="9" class="no-data">Loading pending orders...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3002/api';
+
+        function formatCurrency(amount) {
+            if (amount === null || amount === undefined || amount === '') return '-';
+            const value = parseFloat(amount);
+            return Number.isFinite(value) ? '₱' + value.toFixed(2) : '-';
+        }
+
+        async function loadPendingOrders() {
+            try {
+                const response = await fetch(`${API_BASE}/orders/status/pending`);
+                if (!response.ok) throw new Error('Failed to fetch pending orders');
+                
+                const orders = await response.json();
+                const tbody = document.getElementById('pendingOrdersBody');
+                
+                if (orders.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="9" class="no-data">No pending orders</td></tr>';
+                    return;
+                }
+
+                let html = '';
+                orders.forEach((order) => {
+                    const date = new Date(order.created_at).toLocaleDateString();
+                    html += `
+                        <tr>
+                            <td>${order.id}</td>
+                            <td>${order.customerName}</td>
+                            <td><span class="contact-badge">${order.email || order.contactNumber || 'N/A'}</span></td>
+                            <td>${order.service}</td>
+                            <td>${order.weight}</td>
+                            <td>${formatCurrency(order.totalAmount)}</td>
+                            <td>
+                                <select class="status-select" onchange="updateOrderStatus(${order.id}, this.value)">
+                                    <option value="Pending" ${order.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                                    <option value="Processing" ${order.status === 'Processing' ? 'selected' : ''}>Processing</option>
+                                    <option value="Ready" ${order.status === 'Ready' ? 'selected' : ''}>Ready</option>
+                                    <option value="Picked Up" ${order.status === 'Picked Up' ? 'selected' : ''}>Picked Up</option>
+                                    <option value="On Hold" ${order.status === 'On Hold' ? 'selected' : ''}>On Hold</option>
+                                </select>
+                            </td>
+                            <td>${date}</td>
+                            <td>
+                                <button class="btn-notify-small" onclick="notifyCustomer(${order.id})">Notify</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                tbody.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading pending orders:', error);
+                document.getElementById('pendingOrdersBody').innerHTML = '<tr><td colspan="9" style="color: red;">Error loading pending orders. Check if server is running.</td></tr>';
+            }
+        }
+
+        async function updateOrderStatus(orderId, newStatus) {
+            try {
+                const response = await fetch(`${API_BASE}/orders/${orderId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                });
+
+                if (!response.ok) throw new Error('Failed to update status');
+                
+                console.log(`Order ${orderId} status updated to: ${newStatus}`);
+                // Reload the page to refresh the data
+                loadPendingOrders();
+            } catch (error) {
+                console.error('Error updating order status:', error);
+                alert('Error updating order status: ' + error.message);
+            }
+        }
+
+        async function notifyCustomer(orderId) {
+            // Redirect to notifications page with the order ID
+            window.location.href = `notifications.html?order=${orderId}`;
+        }
+
+        // Load pending orders when page loads
+        document.addEventListener('DOMContentLoaded', loadPendingOrders);
+    </script>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Laundry Management System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <style>
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-image: url('Images/bubbles.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            filter: blur(2px) brightness(0.7);
+            z-index: -1;
+        }
+        body {
+            position: relative;
+        }
+    </style>
+
+    <a href="dashboard.html" class="brand-link" aria-label="LabaDami">
+        <div class="brand-top-left">
+            <h1 class="brand-title">LabaDami</h1>
+            <h2 class="brand-subtitle">Quick and Quality Laundry Services</h2>
+            <p class="brand-tagline">Track every load. Serve every customer better.</p>
+        </div>
+    </a>
+
+    <nav>
+        <ul>
+
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="orders.html">Orders</a></li>
+
+            <li><a href="add_order.html">Add Orders</a></li>
+            <li><a href="notifications.html">Notifications</a></li>
+            <li><a href="sales_report.html">Sales Report</a></li>
+            <li><a href="history.html">History</a></li>
+            <li><a href="stats.html">Statistics</a></li>
+            <li><a href="index.html">Log Out</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <h2>Dashboard</h2>
+        <div class="dashboard-cards">
+            <a href="total_orders.html">
+                <div class="card">
+                    <h3>Total Orders</h3>
+                    <p id="totalOrders">0</p>
+                </div>
+            </a>
+            <a href="pending_laundry.html">
+                <div class="card">
+                    <h3>Pending Laundry</h3>
+                    <p id="pendingOrders">0</p>
+                </div>
+            </a>
+            <a href="ready_pickup.html">
+                <div class="card">
+                    <h3>Ready for Pick Up</h3>
+                    <p id="readyOrders">0</p>
+                </div>
+            </a>
+            <a href="claimed_orders.html">
+                <div class="card">
+                    <h3>Claimed Orders</h3>
+                    <p id="claimedOrders">0</p>
+                </div>
+            </a>
+        </div>
+        <p id="dashboardMessage">Loading dashboard data...</p>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3002/api';
+
+        async function loadDashboardData() {
+            try {
+                const ordersResponse = await fetch(`${API_BASE}/orders`);
+                const orders = await ordersResponse.json();
+
+                const totalOrders = orders.length;
+                const pendingOrders = orders.filter(order =>
+                    order.status === 'Pending' || order.status === 'Processing'
+                ).length;
+                const readyOrders = orders.filter(order => order.status === 'Ready').length;
+                const claimedOrders = orders.filter(order =>
+                    order.status === 'Picked Up'
+                ).length;
+
+                document.getElementById('totalOrders').textContent = totalOrders;
+                document.getElementById('pendingOrders').textContent = pendingOrders;
+                document.getElementById('readyOrders').textContent = readyOrders;
+                document.getElementById('claimedOrders').textContent = claimedOrders;
+                document.getElementById('dashboardMessage').textContent = 'Welcome to the dashboard. Overview of the system.';
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+                document.getElementById('dashboardMessage').textContent = 'Error loading dashboard data. Make sure the server is running on port 3002.';
+                document.getElementById('totalOrders').textContent = '0';
+                document.getElementById('pendingOrders').textContent = '0';
+                document.getElementById('readyOrders').textContent = '0';
+                document.getElementById('claimedOrders').textContent = '0';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadDashboardData);
+    </script>
+</body>
+</html>
+
+

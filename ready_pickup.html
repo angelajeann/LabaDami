@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ready for Pick Up - Laundry Management System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+</header>
+    <nav>
+        <ul>
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="orders.html">Orders</a></li>
+            <li><a href="add_order.html">Add Orders</a></li>
+            <li><a href="notifications.html">Notifications</a></li>
+            <li><a href="sales_report.html">Sales Report</a></li>
+            <li><a href="history.html">History</a></li>
+            <li><a href="stats.html">Statistics</a></li>
+            <li><a href="index.html">Log Out</a></li>
+        </ul>
+    </nav>
+    <div class="container">
+        <h2>Ready for Pick Up</h2>
+        <p>Orders that are ready for customers to pick up.</p>
+        
+        <div class="table-container">
+            <table id="readyOrdersTable">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Customer Name</th>
+                        <th>Email</th>
+                        <th>Service</th>
+                        <th>Weight (kg)</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="readyOrdersBody">
+                    <tr>
+                        <td colspan="9" class="no-data">Loading ready orders...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3002/api';
+
+        function formatCurrency(amount) {
+            if (amount === null || amount === undefined || amount === '') return '-';
+            const value = parseFloat(amount);
+            return Number.isFinite(value) ? '₱' + value.toFixed(2) : '-';
+        }
+
+        async function loadReadyOrders() {
+            try {
+                const response = await fetch(`${API_BASE}/orders`);
+                if (!response.ok) throw new Error('Failed to fetch orders');
+                
+                const allOrders = await response.json();
+                const readyOrders = allOrders.filter(order => order.status === 'Ready');
+                const tbody = document.getElementById('readyOrdersBody');
+                
+                if (readyOrders.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="9" class="no-data">No orders ready for pickup</td></tr>';
+                    return;
+                }
+
+                let html = '';
+                readyOrders.forEach((order) => {
+                    const date = new Date(order.created_at).toLocaleDateString();
+                    html += `
+                        <tr>
+                            <td>${order.id}</td>
+                            <td>${order.customerName}</td>
+                            <td><span class="contact-badge">${order.email || order.contactNumber || 'N/A'}</span></td>
+                            <td>${order.service}</td>
+                            <td>${order.weight}</td>
+                            <td>${formatCurrency(order.totalAmount)}</td>
+                            <td>
+                                <select class="status-select" onchange="updateOrderStatus(${order.id}, this.value)">
+                                    <option value="Pending">Pending</option>
+                                    <option value="Processing">Processing</option>
+                                    <option value="Ready" selected>Ready</option>
+                                    <option value="Picked Up">Picked Up</option>
+                                    <option value="On Hold">On Hold</option>
+                                </select>
+                            </td>
+                            <td>${date}</td>
+                            <td>
+                                <button class="btn-notify-small" onclick="notifyCustomer(${order.id})">Notify Again</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                tbody.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading ready orders:', error);
+                document.getElementById('readyOrdersBody').innerHTML = '<tr><td colspan="9" style="color: red;">Error loading ready orders. Check if server is running.</td></tr>';
+            }
+        }
+
+        async function updateOrderStatus(orderId, newStatus) {
+            try {
+                const response = await fetch(`${API_BASE}/orders/${orderId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                });
+
+                if (!response.ok) throw new Error('Failed to update status');
+                
+                console.log(`Order ${orderId} status updated to: ${newStatus}`);
+                // Reload the page to refresh the data
+                loadReadyOrders();
+            } catch (error) {
+                console.error('Error updating order status:', error);
+                alert('Error updating order status: ' + error.message);
+            }
+        }
+
+        async function notifyCustomer(orderId) {
+            // Redirect to notifications page with the order ID
+            window.location.href = `notifications.html?order=${orderId}`;
+        }
+
+        // Load ready orders when page loads
+        document.addEventListener('DOMContentLoaded', loadReadyOrders);
+    </script>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>History - Laundry Management System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <style>
+        body::before {
+            content: '';
+            position: fixed;
+            /* Leave space for the fixed header */
+            top: 120px;
+            left: 0;
+            width: 100vw;
+            height: calc(100vh - 120px);
+            background-image: url('Images/bubbles.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            filter: blur(8px) brightness(0.7);
+            z-index: -1;
+        }
+        body {
+            position: relative;
+        }
+    </style>
+    <nav>
+        <div style="padding: 0 0 14px;">
+            <a href="dashboard.html" style="text-decoration:none; color:#ffffff; display:block;">
+                <h1 style="margin: 0 0 6px; font-family: 'Poppins', sans-serif; font-size: 28px; color: #ffffff;">LabaDami</h1>
+                <h2 style="margin: 0 0 4px; font-size: 14px; font-weight: 700; color: #dbe8ff;">Quick and Quality Laundry Services</h2>
+                <p style="margin: 0; font-size: 11px; color: rgba(219,232,255,0.9); line-height: 1.2;">Track every load. Serve every customer better.</p>
+            </a>
+        </div>
+        <ul>
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="orders.html">Orders</a></li>
+            <li><a href="add_order.html">Add Orders</a></li>
+            <li><a href="notifications.html">Notifications</a></li>
+            <li><a href="sales_report.html">Sales Report</a></li>
+            <li><a href="history.html">History</a></li>
+            <li><a href="stats.html">Statistics</a></li>
+            <li><a href="index.html">Log Out</a></li>
+        </ul>
+    </nav>
+    <div class="container">
+        <h2>Order History</h2>
+        <p>Complete history of all orders in the system.</p>
+        
+        <div class="table-container">
+            <table id="historyTable">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Customer Name</th>
+                        <th>Email</th>
+                        <th>Service</th>
+                        <th>Weight (kg)</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Date Created</th>
+                        <th>Last Updated</th>
+                    </tr>
+                </thead>
+                <tbody id="historyBody">
+                    <tr>
+                        <td colspan="9" class="no-data">Loading order history...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3002/api';
+
+        function formatCurrency(amount) {
+            if (amount === null || amount === undefined || amount === '') return '-';
+            const value = parseFloat(amount);
+            return Number.isFinite(value) ? '₹' + value.toFixed(2) : '-';
+        }
+
+        async function loadOrderHistory() {
+            try {
+                const response = await fetch(`${API_BASE}/orders`);
+                if (!response.ok) throw new Error('Failed to fetch orders');
+                
+                const orders = await response.json();
+                const tbody = document.getElementById('historyBody');
+                
+                if (orders.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="9" class="no-data">No order history available</td></tr>';
+                    return;
+                }
+
+                // Sort by creation date (newest first)
+                orders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+                let html = '';
+                orders.forEach((order) => {
+                    const createdDate = new Date(order.created_at).toLocaleDateString();
+                    const updatedDate = new Date(order.updated_at).toLocaleDateString();
+                    html += `
+                        <tr>
+                            <td>${order.id}</td>
+                            <td>${order.customerName}</td>
+                            <td><span class="contact-badge">${order.email || order.contactNumber || 'N/A'}</span></td>
+                            <td>${order.service}</td>
+                            <td>${order.weight}</td>
+                            <td>${formatCurrency(order.totalAmount)}</td>
+                            <td><span class="status-badge status-${order.status.toLowerCase().replace(' ', '-')}">${order.status}</span></td>
+                            <td>${createdDate}</td>
+                            <td>${updatedDate}</td>
+                        </tr>
+                    `;
+                });
+                
+                tbody.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading order history:', error);
+                document.getElementById('historyBody').innerHTML = '<tr><td colspan="9" style="color: red;">Error loading order history. Check if server is running.</td></tr>';
+            }
+        }
+
+        // Load order history when page loads
+        document.addEventListener('DOMContentLoaded', loadOrderHistory);
+    </script>

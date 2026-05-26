@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Orders - Laundry Management System</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- ========================================= -->
+    <!-- BACKGROUND STYLE -->
+    <!-- ========================================= -->
+    <style>
+
+        body::before {
+
+            content: '';
+
+            position: fixed;
+
+            top: 0;
+            left: 0;
+
+            width: 100vw;
+            height: 100vh;
+
+            background-image: url('Images/laundromat_bg.jpg');
+
+            background-size: cover;
+
+            background-position: center;
+
+            background-repeat: no-repeat;
+
+            filter: blur(8px) brightness(0.7);
+
+            z-index: -1;
+        }
+
+        body {
+            position: relative;
+        }
+
+    </style>
+
+    <!-- ========================================= -->
+    <!-- SIDEBAR NAVIGATION -->
+    <!-- ========================================= -->
+<nav>
+        <div class="brand-top-left-nav">
+            <a href="dashboard.html" class="brand-link" aria-label="LabaDami">
+                <div class="brand-top-left">
+
+                <h1 class="brand-title">LabaDami</h1>
+                <h2 class="brand-subtitle">Quick and Quality Laundry Services</h2>
+                <p class="brand-tagline">Track every load. Serve every customer better.</p>
+            </div>
+                </div>
+            </a>
+        </div>
+
+        <ul>
+
+
+            <li><a href="dashboard.html">Dashboard</a></li>
+
+            <li><a href="orders.html">Orders</a></li>
+
+            <li><a href="add_order.html">Add Orders</a></li>
+
+            <li><a href="notifications.html">Notifications</a></li>
+
+            <li><a href="sales_report.html">Sales Report</a></li>
+
+            <li><a href="history.html">History</a></li>
+
+            <li><a href="stats.html">Statistics</a></li>
+
+            <li><a href="index.html">Log Out</a></li>
+
+        </ul>
+
+    </nav>
+
+    <!-- ========================================= -->
+    <!-- MAIN CONTAINER -->
+    <!-- ========================================= -->
+    <div class="container">
+
+        <h2>Add Orders</h2>
+
+        <!-- ========================================= -->
+        <!-- ORDER FORM -->
+        <!-- ========================================= -->
+        <form id="addOrderForm" class="order-form">
+
+            <!-- ========================================= -->
+            <!-- CUSTOMER INFORMATION -->
+            <!-- ========================================= -->
+            <div class="form-section">
+
+                <h3>Customer Information</h3>
+
+                <!-- CUSTOMER NAME -->
+                <div class="form-group">
+
+                    <label for="customerName">
+
+                        Customer Name *
+
+                    </label>
+
+                    <input
+                        type="text"
+                        id="customerName"
+                        name="customerName"
+                        required
+                        placeholder="Enter customer name"
+                    >
+
+                </div>
+
+                <!-- CONTACT NUMBER -->
+                <div class="form-group">
+
+                    <label for="customerNumber">
+
+                        Contact Number *
+
+                    </label>
+
+                    <input
+                        type="text"
+                        id="customerNumber"
+                        name="customerNumber"
+                        required
+                        placeholder="Enter contact number"
+                    >
+
+                </div>
+
+            </div>
+
+            <!-- ========================================= -->
+            <!-- LAUNDRY SERVICE -->
+            <!-- ========================================= -->
+            <div class="form-section">
+
+                <h3>Laundry Service Details</h3>
+
+                <!-- SERVICE -->
+                <div class="form-group">
+
+                    <label for="service">
+
+                        Laundry Service *
+
+                    </label>
+
+                    <select
+                        id="service"
+                        name="service"
+                        required
+                        onchange="calculatePayment()"
+                    >
+
+                        <option value="">
+
+                            -- Select a service --
+
+                        </option>
+
+                        <option value="wash" data-price="50">
+
+                            Wash (₱50/kg)
+
+                        </option>
+
+                        <option value="dry" data-price="40">
+
+                            Dry Cleaning (₱40/kg)
+
+                        </option>
+
+                        <option value="iron" data-price="30">
+
+                            Ironing (₱30/kg)
+
+                        </option>
+
+                        <option value="wash-dry" data-price="80">
+
+                            Wash & Dry (₱80/kg)
+
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <!-- WEIGHT -->
+                <div class="form-group">
+
+                    <label for="weight">
+
+                        Weight (in kg) *
+
+                    </label>
+
+                    <input
+                        type="number"
+                        id="weight"
+                        name="weight"
+                        required
+                        placeholder="Enter weight of laundry"
+                        min="0.1"
+                        step="0.1"
+                        oninput="calculatePayment()"
+                    >
+
+                </div>
+
+            </div>
+
+            <!-- ========================================= -->
+            <!-- PAYMENT SUMMARY -->
+            <!-- ========================================= -->
+            <div class="form-section">
+
+                <h3>Payment Summary</h3>
+
+                <div class="payment-summary">
+
+                    <div class="summary-row">
+
+                        <span>Selected Service:</span>
+
+                        <span id="serviceDisplay">-</span>
+
+                    </div>
+
+                    <div class="summary-row">
+
+                        <span>Weight:</span>
+
+                        <span id="weightDisplay">-</span>
+
+                    </div>
+
+                    <div class="summary-row price-per-kg">
+
+                        <span>Price per kg:</span>
+
+                        <span id="pricePerKgDisplay">-</span>
+
+                    </div>
+
+                    <div class="summary-row total-amount">
+
+                        <span>Total Amount:</span>
+
+                        <span id="totalAmount">₱0</span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- ========================================= -->
+            <!-- BUTTONS -->
+            <!-- ========================================= -->
+            <div class="form-actions">
+
+                <button type="reset" class="btn-reset">
+
+                    Clear
+
+                </button>
+
+                <button
+                    type="button"
+                    id="proceedToPayment"
+                    class="btn-confirm"
+                >
+
+                    Proceed to Payment
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+    <!-- ========================================= -->
+    <!-- PAYMENT MODAL -->
+    <!-- ========================================= -->
+    <div id="paymentModal" class="modal">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h3>Confirm Payment</h3>
+
+                <span class="close"
+                      onclick="closePaymentModal()">
+
+                    &times;
+
+                </span>
+
+            </div>
+
+            <div class="modal-body">
+
+                <div class="info-group">
+
+                    <h4>Order Summary</h4>
+
+                    <p>
+                        <strong>Customer:</strong>
+                        <span id="modalCustomerName"></span>
+                    </p>
+
+                    <p>
+                        <strong>Contact Number:</strong>
+                        <span id="modalCustomerNumber"></span>
+                    </p>
+
+                    <p>
+                        <strong>Service:</strong>
+                        <span id="modalService"></span>
+                    </p>
+
+                    <p>
+                        <strong>Weight:</strong>
+                        <span id="modalWeight"></span>
+                    </p>
+
+                    <p>
+                        <strong>Total Amount:</strong>
+                        <span id="modalTotalAmount"></span>
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div class="modal-actions">
+
+                <button class="btn-secondary"
+                        onclick="closePaymentModal()">
+
+                    Cancel
+
+                </button>
+
+                <button class="btn-primary"
+                        onclick="confirmPayment()">
+
+                    Confirm Payment
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ========================================= -->
+    <!-- SUCCESS MODAL -->
+    <!-- ========================================= -->
+    <div id="successModal" class="modal">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h3>Payment Successful</h3>
+
+                <span class="close"
+                      onclick="closeSuccessModal()">
+
+                    &times;
+
+                </span>
+
+            </div>
+
+            <div class="modal-body">
+
+                <p style="text-align:center;
+                          color:#27ae60;
+                          font-size:18px;
+                          font-weight:bold;">
+
+                    ✓ Payment Confirmed
+
+                </p>
+
+                <p>
+                    Customer information successfully saved.
+                </p>
+
+                <p>
+                    <strong>Order ID:</strong>
+                    <span id="successOrderId"></span>
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ========================================= -->
+    <!-- JAVASCRIPT -->
+    <!-- ========================================= -->
+    <script>
+
+        // API URL
+        const API_BASE = 'http://localhost:3002/api';
+
+        // =========================================
+        // CALCULATE PAYMENT
+        // =========================================
+        function calculatePayment() {
+
+            const serviceSelect =
+                document.getElementById('service');
+
+            const weight =
+                parseFloat(
+                    document.getElementById('weight').value
+                ) || 0;
+
+            const selectedOption =
+                serviceSelect.options[
+                    serviceSelect.selectedIndex
+                ];
+
+            const pricePerKg =
+                parseFloat(selectedOption.dataset.price) || 0;
+
+            const total =
+                weight * pricePerKg;
+
+            // Update displays
+            document.getElementById('serviceDisplay').textContent =
+                selectedOption.text || '-';
+
+            document.getElementById('weightDisplay').textContent =
+                weight > 0 ? weight + ' kg' : '-';
+
+            document.getElementById('pricePerKgDisplay').textContent =
+                pricePerKg > 0 ? '₱' + pricePerKg : '-';
+
+            document.getElementById('totalAmount').textContent =
+                total > 0 ? '₱' + total.toFixed(2) : '₱0';
+        }
+
+        // =========================================
+        // PROCEED BUTTON
+        // =========================================
+        document.getElementById('proceedToPayment')
+            .addEventListener('click', function () {
+
+                const customerName =
+                    document.getElementById('customerName')
+                    .value.trim();
+
+                const customerNumber =
+                    document.getElementById('customerNumber')
+                    .value.trim();
+
+                const service =
+                    document.getElementById('service').value;
+
+                const weight =
+                    parseFloat(
+                        document.getElementById('weight').value
+                    );
+
+                if (
+                    !customerName ||
+                    !customerNumber ||
+                    !service ||
+                    !weight
+                ) {
+
+                    alert('Please fill in all required fields.');
+
+                    return;
+                }
+
+                // Fill modal
+                document.getElementById('modalCustomerName')
+                    .textContent = customerName;
+
+                document.getElementById('modalCustomerNumber')
+                    .textContent = customerNumber;
+
+                const serviceSelect = document.getElementById('service');
+                const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
+
+                // Display (human readable)
+                document.getElementById('modalService').textContent = selectedOption.text;
+
+                // Store canonical service value for backend submission
+                document.getElementById('modalService').dataset.serviceKey = selectedOption.value;
+
+
+                document.getElementById('modalWeight')
+                    .textContent = weight + ' kg';
+
+                const totalText =
+                    document.getElementById('totalAmount')
+                    .textContent;
+
+                const numericTotal =
+                    parseFloat(
+                        totalText.replace(/[^0-9.-]+/g, '')
+                    ) || 0;
+
+                document.getElementById('modalTotalAmount')
+                    .textContent = totalText;
+
+                document.getElementById('modalTotalAmount')
+                    .dataset.amount =
+                    numericTotal.toFixed(2);
+
+                // Show modal
+                document.getElementById('paymentModal')
+                    .style.display = 'flex';
+            });
+
+        // =========================================
+        // CLOSE PAYMENT MODAL
+        // =========================================
+        function closePaymentModal() {
+
+            document.getElementById('paymentModal')
+                .style.display = 'none';
+        }
+
+        // =========================================
+        // CLOSE SUCCESS MODAL
+        // =========================================
+        function closeSuccessModal() {
+
+            document.getElementById('successModal')
+                .style.display = 'none';
+
+            document.getElementById('addOrderForm')
+                .reset();
+
+            calculatePayment();
+        }
+
+        // =========================================
+        // CREATE CUSTOMER
+        // =========================================
+        async function createCustomer(customerName, contactNumber) {
+
+            const response =
+                await fetch(`${API_BASE}/customers`, {
+
+                    method: 'POST',
+
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+
+                    body: JSON.stringify({
+
+                        customerName: customerName,
+
+                        contactNumber: contactNumber
+                    })
+                });
+
+            return await response.json();
+        }
+
+        // =========================================
+        // CONFIRM PAYMENT
+        // =========================================
+        async function confirmPayment() {
+
+            try {
+
+                const customerName =
+                    document.getElementById('modalCustomerName')
+                    .textContent;
+
+                const customerNumber =
+                    document.getElementById('modalCustomerNumber')
+                    .textContent;
+
+                const service =
+                    document.getElementById('modalService').dataset.serviceKey
+                    || document.getElementById('service').value;
+
+
+                const weight =
+                    parseFloat(
+                        document.getElementById('modalWeight')
+                        .textContent
+                    );
+
+                const totalAmount =
+                    parseFloat(
+                        document.getElementById('modalTotalAmount')
+                        .dataset.amount
+                    );
+
+                closePaymentModal();
+
+                // Create customer
+                const customer =
+                    await createCustomer(
+                        customerName,
+                        customerNumber
+                    );
+
+                // Create order
+                const orderResponse =
+                    await fetch(`${API_BASE}/orders`, {
+
+                        method: 'POST',
+
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+
+                        body: JSON.stringify({
+
+                            customer_id: customer.id,
+
+                            service: service,
+
+                            weight: weight,
+
+                            totalAmount: totalAmount
+                        })
+                    });
+
+                const order =
+                    await orderResponse.json();
+
+                // Show success
+                document.getElementById('successOrderId')
+                    .textContent = order.orderId;
+
+                document.getElementById('successModal')
+                    .style.display = 'flex';
+
+            } catch (error) {
+
+                console.error(error);
+
+                alert(
+                    'Error processing order.'
+                );
+            }
+        }
+
+        // =========================================
+        // CLOSE MODAL WHEN CLICK OUTSIDE
+        // =========================================
+        window.onclick = function (event) {
+
+            const paymentModal =
+                document.getElementById('paymentModal');
+
+            const successModal =
+                document.getElementById('successModal');
+
+            if (event.target == paymentModal) {
+
+                paymentModal.style.display = 'none';
+            }
+
+            if (event.target == successModal) {
+
+                closeSuccessModal();
+            }
+        };
+
+    </script>
+
+</body>
+</html>

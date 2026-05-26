@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistics - Laundry Management System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <style>
+        body::before {
+            content: '';
+            position: fixed;
+            /* Leave space for the fixed header */
+            top: 120px;
+            left: 0;
+            width: 100vw;
+            height: calc(100vh - 120px);
+            z-index: -1;
+            background-image: url('Images/laundromat_bg.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            filter: blur(8px) brightness(0.7);
+            z-index: -1;
+        }
+        body {
+            position: relative;
+        }
+    </style>
+    <nav>
+        <div style="padding: 0 0 18px;">
+            <a href="dashboard.html" style="text-decoration:none; color:#ffffff; display:block;">
+                <h1 style="margin: 0 0 10px; font-family: 'Poppins', sans-serif; font-size: 22px; color: #ffffff;">Labadami</h1>
+                <h2 style="margin: 0 0 10px; font-size: 14px; font-weight: 600; color: #dbe8ff;">Quick and Quality Laundry Services</h2>
+                <p style="margin: 0; font-size: 12px; color: rgba(219,232,255,0.9); line-height: 1.6;">Track every load. Serve every customer better.</p>
+            </a>
+        </div>
+        <ul>
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="orders.html">Orders</a></li>
+            <li><a href="add_order.html">Add Orders</a></li>
+            <li><a href="notifications.html">Notifications</a></li>
+            <li><a href="sales_report.html">Sales Report</a></li>
+            <li><a href="history.html">History</a></li>
+            <li><a href="stats.html">Statistics</a></li>
+            <li><a href="index.html">Log Out</a></li>
+        </ul>
+    </nav>
+    <div class="container">
+        <h2>Statistics</h2>
+        
+        <!-- Summary Cards -->
+        <div class="dashboard-cards">
+            <div class="card">
+                <h3>Total Orders</h3>
+                <p id="totalOrders">0</p>
+            </div>
+            <div class="card">
+                <h3>Pending Laundry</h3>
+                <p id="pendingOrders">0</p>
+            </div>
+            <div class="card">
+                <h3>Ready for Pick Up</h3>
+                <p id="readyOrders">0</p>
+            </div>
+            <div class="card">
+                <h3>Claimed Orders</h3>
+                <p id="claimedOrders">0</p>
+            </div>
+        </div>
+
+        <!-- Detailed Statistics -->
+        <div class="stats-section">
+            <h3>Detailed Statistics</h3>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <h4>Total Revenue</h4>
+                    <p id="totalRevenue">₹0</p>
+                </div>
+                <div class="stat-item">
+                    <h4>Average Order Value</h4>
+                    <p id="avgOrderValue">₹0</p>
+                </div>
+                <div class="stat-item">
+                    <h4>Total Weight Processed</h4>
+                    <p id="totalWeight">0 kg</p>
+                </div>
+                <div class="stat-item">
+                    <h4>Unique Customers</h4>
+                    <p id="uniqueCustomers">0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Service Breakdown -->
+        <div class="stats-section">
+            <h3>Service Breakdown</h3>
+            <div class="table-container">
+                <table id="serviceStatsTable">
+                    <thead>
+                        <tr>
+                            <th>Service Type</th>
+                            <th>Orders Count</th>
+                            <th>Total Weight (kg)</th>
+                            <th>Total Revenue</th>
+                            <th>Percentage</th>
+                        </tr>
+                    </thead>
+                    <tbody id="serviceStatsBody">
+                        <tr>
+                            <td colspan="5" class="no-data">Loading service statistics...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <p id="statsMessage">Loading statistics...</p>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3002/api';
+
+        async function loadStatistics() {
+            try {
+                // Load summary data
+                const summaryResponse = await fetch(`${API_BASE}/sales/summary`);
+                const summary = await summaryResponse.json();
+
+                // Load all orders for detailed stats
+                const ordersResponse = await fetch(`${API_BASE}/orders`);
+                const orders = await ordersResponse.json();
+
+                // Load service breakdown
+                const serviceResponse = await fetch(`${API_BASE}/sales/by-service`);
+                const serviceStats = await serviceResponse.json();
+
+                // Load customers count
+                const customersResponse = await fetch(`${API_BASE}/customers`);
+                const customers = await customersResponse.json();
+
+                updateSummaryCards(summary, orders);
+                updateServiceStats(serviceStats, summary.totalOrders);
+                updateCustomerCount(customers.length);
+                document.getElementById('statsMessage').textContent = 'Statistics loaded successfully.';
+
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+                document.getElementById('statsMessage').textContent = 'Error loading statistics. Make sure the server is running on port 3002.';
+                // Set default values
+                setDefaultStats();
+            }
+        }
+
+        function updateSummaryCards(summary, orders) {
+            const totalOrders = orders.length;
+            const pendingOrders = orders.filter(order => 
+                order.status === 'Pending' || order.status === 'Processing'
+            ).length;
+            const readyOrders = orders.filter(order => order.status === 'Ready').length;
+            const claimedOrders = orders.filter(order => order.status === 'Picked Up').length;
+
+            document.getElementById('totalOrders').textContent = totalOrders;
+            document.getElementById('pendingOrders').textContent = pendingOrders;
+            document.getElementById('readyOrders').textContent = readyOrders;
+            document.getElementById('claimedOrders').textContent = claimedOrders;
+            document.getElementById('totalRevenue').textContent = '₹' + (summary.totalRevenue || 0).toFixed(2);
+            document.getElementById('avgOrderValue').textContent = '₹' + (summary.avgOrderValue || 0).toFixed(2);
+            document.getElementById('totalWeight').textContent = (summary.totalWeight || 0).toFixed(1) + ' kg';
+        }
+
+        function updateServiceStats(serviceStats, totalOrders) {
+            const tbody = document.getElementById('serviceStatsBody');
+            let html = '';
+
+            if (serviceStats.length === 0) {
+                html = '<tr><td colspan="5" class="no-data">No service data available</td></tr>';
+            } else {
+                serviceStats.forEach(stats => {
+                    const percentage = totalOrders > 0 ? ((stats.orderCount / totalOrders) * 100).toFixed(1) : 0;
+                    html += `
+                        <tr>
+                            <td>${stats.service}</td>
+                            <td>${stats.orderCount}</td>
+                            <td>${parseFloat(stats.totalWeight).toFixed(1)}</td>
+                            <td>₹${parseFloat(stats.totalRevenue).toFixed(2)}</td>
+                            <td>${percentage}%</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            tbody.innerHTML = html;
+        }
+
+        function updateCustomerCount(count) {
+            document.getElementById('uniqueCustomers').textContent = count;
+        }
+
+        function setDefaultStats() {
+            document.getElementById('totalOrders').textContent = '0';
+            document.getElementById('pendingOrders').textContent = '0';
+            document.getElementById('readyOrders').textContent = '0';
+            document.getElementById('claimedOrders').textContent = '0';
+            document.getElementById('totalRevenue').textContent = '₹0';
+            document.getElementById('avgOrderValue').textContent = '₹0';
+            document.getElementById('totalWeight').textContent = '0 kg';
+            document.getElementById('uniqueCustomers').textContent = '0';
+            document.getElementById('serviceStatsBody').innerHTML = '<tr><td colspan="5" class="no-data">No data available</td></tr>';
+        }
+
+        // Load statistics when page loads
+        document.addEventListener('DOMContentLoaded', loadStatistics);
+    </script>

@@ -1,0 +1,29 @@
+{
+  "name": "laundry-management-server",
+  "version": "1.0.0",
+  "description": "Laundry Management System Backend",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "db:init": "node init-db.js"
+  },
+  "keywords": [
+    "laundry",
+    "management"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.16.1",
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.2",
+    "mysql2": "^3.6.0",
+    "nodemailer": "^8.0.7",
+    "sqlite3": "^6.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
