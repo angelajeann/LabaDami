@@ -570,7 +570,7 @@
         async function createCustomer(customerName, contactNumber) {
 
             const response =
-                await fetch(`${API_BASE}/customers`, {
+                await fetch(`${API_BASE}/api/customers`, {
 
                     method: 'POST',
 
@@ -599,6 +599,7 @@
                 const customerName =
                     document.getElementById('modalCustomerName')
                     .textContent;
+
 
                 const customerNumber =
                     document.getElementById('modalCustomerNumber')
@@ -632,7 +633,7 @@
 
                 // Create order
                 const orderResponse =
-                    await fetch(`${API_BASE}/orders`, {
+                    await fetch(`${API_BASE}/api/orders`, {
 
                         method: 'POST',
 
@@ -643,6 +644,7 @@
                         body: JSON.stringify({
 
                             customer_id: customer.id,
+                            customerName: customerName,
 
                             service: service,
 
@@ -656,8 +658,8 @@
                     await orderResponse.json();
 
                 // Show success
-                document.getElementById('successOrderId')
-                    .textContent = order.orderId;
+document.getElementById('successOrderId')
+                    .textContent = order.orderId || order.order_id || order.id;
 
                 document.getElementById('successModal')
                     .style.display = 'flex';

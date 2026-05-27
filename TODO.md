@@ -1,7 +1,7 @@
-- [x] Investigate existing Orders page and backend customers endpoints
-- [x] Add DELETE endpoint for customers: `DELETE /api/customers/:id`
-- [x] Add “Delete Customer” button on each row of `orders.html`
-- [x] Button calls backend delete endpoint and reloads orders
-- [x] (Optional) Add CSS class styling for `.btn-delete-small`
+# TODO - Navigation consistency
 
+- [ ] Normalize sidebar + brand markup across all pages (copy from `dashboard.html`) 
+- [ ] Remove page-specific background/nav/header wrappers that offset layout
+- [ ] Update `style.css` so the fixed sidebar and brand spacing works consistently
+- [ ] Quick visual QA: open each page and confirm nav buttons + brand stay fixed and content aligns
 

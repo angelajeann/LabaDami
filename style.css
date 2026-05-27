@@ -20,8 +20,9 @@ body {
 .container {
     max-width: calc(100% - 320px);
     margin: 0 30px 40px 300px;
-    padding: 30px 0 0;
+    padding: 110px 0 0; /* consistent top spacing for fixed brand */
 }
+
 
 header {
     margin-left: 300px;
@@ -62,7 +63,9 @@ nav {
     bottom: 0;
     width: 280px;
     padding: 40px 24px;
-    padding-top: 150px; /* leave room for fixed brand */
+    padding-top: 140px; /* leave room for fixed brand */
+
+
     background: linear-gradient(180deg, #142d50 0%, #0f233f 100%);
     box-shadow: 4px 0 30px rgba(16, 34, 70, 0.12);
     display: flex;
@@ -84,9 +87,9 @@ nav {
 }
 
 /* Prevent left nav from covering the fixed brand */
-nav {
-    padding-top: 110px;
-}
+
+
+
 
 
 .brand-top-left {

@@ -27,18 +27,19 @@
             position: relative;
         }
     </style>
-    <nav>
-        <div style="padding: 0 0 14px;">
-            <a href="dashboard.html" style="text-decoration:none; color:#ffffff; display:block;">
-                <h1 style="margin: 0 0 6px; font-family: 'Poppins', sans-serif; font-size: 28px; color: #ffffff;">LabaDami</h1>
-                <h2 style="margin: 0 0 4px; font-size: 14px; font-weight: 700; color: #dbe8ff;">Quick and Quality Laundry Services</h2>
-                <p style="margin: 0; font-size: 11px; color: rgba(219,232,255,0.9); line-height: 1.2;">Track every load. Serve every customer better.</p>
-            </a>
+    <a href="dashboard.html" class="brand-link" aria-label="LabaDami">
+        <div class="brand-top-left">
+            <h1 class="brand-title">LabaDami</h1>
+            <h2 class="brand-subtitle">Quick and Quality Laundry Services</h2>
+            <p class="brand-tagline">Track every load. Serve every customer better.</p>
         </div>
+    </a>
+
+    <nav>
         <ul>
             <li><a href="dashboard.html">Dashboard</a></li>
             <li><a href="orders.html">Orders</a></li>
-            <li><a href="add_order.html">Add Order</a></li>
+            <li><a href="add_order.html">Add Orders</a></li>
             <li><a href="notifications.html">Notifications</a></li>
             <li><a href="sales_report.html">Sales Report</a></li>
             <li><a href="history.html">History</a></li>
@@ -46,6 +47,7 @@
             <li><a href="index.html">Log Out</a></li>
         </ul>
     </nav>
+
     <div class="container">
         <h2>Notifications - Ready for Pickup</h2>
         <p>Notify customers when their laundry is ready for pickup</p>
@@ -130,7 +132,7 @@
     </div>
 
     <script>
-const API_BASE = '';
+const API_BASE = 'https://labadami.onrender.com';
         let currentOrderId = null;
         let pendingOrders = [];
         let readyOrders = [];

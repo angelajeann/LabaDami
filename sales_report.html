@@ -11,11 +11,10 @@
         body::before {
             content: '';
             position: fixed;
-            /* Leave space for the fixed header */
-            top: 120px;
+            top: 0;
             left: 0;
             width: 100vw;
-            height: calc(100vh - 120px);
+            height: 100vh;
             z-index: -1;
             background-image: url('Images/laundromat_bg.jpg');
             background-size: cover;
@@ -28,14 +27,16 @@
             position: relative;
         }
     </style>
-    <nav>
-        <div style="padding: 0 0 14px;">
-            <a href="dashboard.html" style="text-decoration:none; color:#ffffff; display:block;">
-                <h1 style="margin: 0 0 6px; font-family: 'Poppins', sans-serif; font-size: 28px; color: #ffffff;">LabaDami</h1>
-                <h2 style="margin: 0 0 4px; font-size: 14px; font-weight: 700; color: #dbe8ff;">Quick and Quality Laundry Services</h2>
-                <p style="margin: 0; font-size: 11px; color: rgba(219,232,255,0.9); line-height: 1.2;">Track every load. Serve every customer better.</p>
-            </a>
+
+    <a href="dashboard.html" class="brand-link" aria-label="LabaDami">
+        <div class="brand-top-left">
+            <h1 class="brand-title">LabaDami</h1>
+            <h2 class="brand-subtitle">Quick and Quality Laundry Services</h2>
+            <p class="brand-tagline">Track every load. Serve every customer better.</p>
         </div>
+    </a>
+
+    <nav>
         <ul>
             <li><a href="dashboard.html">Dashboard</a></li>
             <li><a href="orders.html">Orders</a></li>
@@ -47,6 +48,7 @@
             <li><a href="index.html">Log Out</a></li>
         </ul>
     </nav>
+
     <div class="container">
         <h2>Sales Report</h2>
 
@@ -125,8 +127,8 @@
                         <tr>
                             <th>Date</th>
                             <th>Customer</th>
-                            <th>Email</th>
                             <th>Service</th>
+
                             <th>Weight (kg)</th>
                             <th>Amount</th>
                             <th>Status</th>
@@ -165,7 +167,9 @@
     </div>
 
     <script>
+        // Use deployed API base (other pages use this value)
         const API_BASE = 'https://labadami.onrender.com';
+
 
         function formatCurrency(amount) {
             if (amount === null || amount === undefined || amount === '') return '₱0.00';
@@ -192,11 +196,7 @@
         // Load sales report data
         async function loadSalesReport() {
             try {
-                // Load summary data
-                const summaryResponse = await fetch(`${API_BASE}/sales/summary`);
-                const summary = await summaryResponse.json();
-
-                // Load filtered orders
+                // Load filtered orders + build shared params
                 const dateFrom = document.getElementById('dateFrom').value;
                 const dateTo = document.getElementById('dateTo').value;
                 const serviceFilter = document.getElementById('serviceFilter').value;
@@ -206,25 +206,52 @@
                 if (dateTo) params.append('dateTo', dateTo);
                 if (serviceFilter) params.append('service', serviceFilter);
 
-                const ordersResponse = await fetch(`${API_BASE}/sales/filtered?${params}`);
+                // Load summary data (filtered)
+                const summaryResponse = await fetch(`${API_BASE}/api/sales/summary?${params}`);
+                if (!summaryResponse.ok) {
+                    const errText = await summaryResponse.text().catch(() => '');
+                    throw new Error(`Sales summary failed (${summaryResponse.status}). ${errText}`);
+                }
+                const summary = await summaryResponse.json();
+
+
+                // Load filtered orders (for recent orders table)
+                const ordersResponse = await fetch(`${API_BASE}/api/sales/filtered?${params}`);
+                if (!ordersResponse.ok) {
+                    const errText = await ordersResponse.text().catch(() => '');
+                    throw new Error(`Sales filtered orders failed (${ordersResponse.status}). ${errText}`);
+                }
                 const orders = await ordersResponse.json();
 
-                // Load service sales
-                const serviceResponse = await fetch(`${API_BASE}/sales/by-service`);
+                // Load service sales (filtered)
+                const serviceResponse = await fetch(`${API_BASE}/api/sales/by-service?${params}`);
+                if (!serviceResponse.ok) {
+                    const errText = await serviceResponse.text().catch(() => '');
+                    throw new Error(`Sales by-service failed (${serviceResponse.status}). ${errText}`);
+                }
                 const serviceSales = await serviceResponse.json();
 
-                // Load daily sales
-                const dailyResponse = await fetch(`${API_BASE}/sales/daily`);
+                // Load daily sales (filtered by date)
+                const dailyResponse = await fetch(`${API_BASE}/api/sales/daily?${params}`);
+                if (!dailyResponse.ok) {
+                    const errText = await dailyResponse.text().catch(() => '');
+                    throw new Error(`Sales daily failed (${dailyResponse.status}). ${errText}`);
+                }
                 const dailySales = await dailyResponse.json();
+
 
                 updateSummaryCards(summary);
                 updateServiceSales(serviceSales);
                 updateRecentOrders(orders);
                 updateDailySales(dailySales);
+
             } catch (error) {
                 console.error('Error loading sales report:', error);
-                showError('Failed to load sales data. Make sure the server is running.');
+                const msg = (error && error.message) ? error.message : 'Failed to load sales data';
+                // Keep UI simple but don't fail silently
+                showError(msg.includes('Database not ready') ? 'Database not ready. Please wait a moment and refresh.' : 'Failed to load sales data.');
             }
+
         }
 
         // Filter orders based on date and service
@@ -300,8 +327,8 @@
                         <tr>
                             <td>${date}</td>
                             <td>${order.customerName}</td>
-                            <td><span class="contact-badge">${order.email || order.contactNumber || 'N/A'}</span></td>
                             <td>${order.service}</td>
+
                             <td>${order.weight}</td>
                             <td>${formatCurrency(order.totalAmount)}</td>
                             <td><span class="status-badge status-${order.status.toLowerCase().replace(' ', '-')}">${order.status}</span></td>
@@ -341,7 +368,8 @@
         function showError(message) {
             const containers = ['serviceSalesBody', 'recentOrdersBody', 'dailySalesBody'];
             containers.forEach(id => {
-                const colspan = id === 'serviceSalesBody' ? '5' : id === 'recentOrdersBody' ? '7' : '4';
+                    const colspan = id === 'serviceSalesBody' ? '5' : id === 'recentOrdersBody' ? '6' : '4';
+
                 document.getElementById(id).innerHTML = `<tr><td colspan="${colspan}" style="color: red;">${message}</td></tr>`;
             });
         }
@@ -351,6 +379,7 @@
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', initializeSalesReport);
+
     </script>
 
 </body>

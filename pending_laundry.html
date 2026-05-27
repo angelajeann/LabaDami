@@ -7,28 +7,14 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
-        <style>
-            body::before {
-                content: '';
-                position: fixed;
-                top: 120px;
-                left: 0;
-                width: 100vw;
-                height: 100vh;
-                background-image: url('bubbles.jpg');
-                background-size: cover;
-                background-position: center;
-                background-repeat: no-repeat;
-                filter: blur(8px) brightness(0.7);
-                z-index: -1;
-            }
-            body {
-                position: relative;
-            }
-        </style>
+    <a href="dashboard.html" class="brand-link" aria-label="LabaDami">
+        <div class="brand-top-left">
+            <h1 class="brand-title">LabaDami</h1>
+            <h2 class="brand-subtitle">Quick and Quality Laundry Services</h2>
+            <p class="brand-tagline">Track every load. Serve every customer better.</p>
         </div>
-    </header>
+    </a>
+
     <nav>
         <ul>
             <li><a href="dashboard.html">Dashboard</a></li>
@@ -41,6 +27,7 @@
             <li><a href="index.html">Log Out</a></li>
         </ul>
     </nav>
+
     <div class="container">
         <h2>Pending Laundry</h2>
         <p>Orders that are currently being processed or waiting to be processed.</p>
@@ -70,7 +57,7 @@
     </div>
 
     <script>
-const API_BASE = '';
+const API_BASE = 'https://labadami.onrender.com';
 
         function formatCurrency(amount) {
             if (amount === null || amount === undefined || amount === '') return '-';
@@ -137,8 +124,15 @@ const API_BASE = '';
                 });
 
                 if (!response.ok) throw new Error('Failed to update status');
-                
+
                 console.log(`Order ${orderId} status updated to: ${newStatus}`);
+
+                // If user picked up, redirect so claimed_orders.html refreshes with the new status
+                if (newStatus === 'Picked Up') {
+                    window.location.href = 'claimed_orders.html';
+                    return;
+                }
+
                 // Reload the page to refresh the data
                 loadPendingOrders();
             } catch (error) {

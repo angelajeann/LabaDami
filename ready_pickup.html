@@ -8,6 +8,14 @@
 </head>
 <body>
 </header>
+    <a href="dashboard.html" class="brand-link" aria-label="LabaDami">
+        <div class="brand-top-left">
+            <h1 class="brand-title">LabaDami</h1>
+            <h2 class="brand-subtitle">Quick and Quality Laundry Services</h2>
+            <p class="brand-tagline">Track every load. Serve every customer better.</p>
+        </div>
+    </a>
+
     <nav>
         <ul>
             <li><a href="dashboard.html">Dashboard</a></li>
@@ -20,6 +28,7 @@
             <li><a href="index.html">Log Out</a></li>
         </ul>
     </nav>
+
     <div class="container">
         <h2>Ready for Pick Up</h2>
         <p>Orders that are ready for customers to pick up.</p>
@@ -49,7 +58,7 @@
     </div>
 
     <script>
-const API_BASE = '';
+const API_BASE = 'https://labadami.onrender.com';
 
         function formatCurrency(amount) {
             if (amount === null || amount === undefined || amount === '') return '-';
@@ -60,7 +69,7 @@ const API_BASE = '';
         async function loadReadyOrders() {
             try {
                 const response = await fetch(`${API_BASE}/api/orders`);
-                if (!response.ok) throw new Error('Failed to fetch orders');
+                if (!response.ok) throw new Error('Failed to this is on the vercel url Failed to load resource: the server responded with a status of 404 ()Understand this error labadami.onrender.com/orders:1 Failed to load resource: the server responded with a status of 404 ()Understand this error dashboard.html:107 Error loading dashboard data: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON orders');
                 
                 const allOrders = await response.json();
                 const readyOrders = allOrders.filter(order => order.status === 'Ready');
@@ -117,8 +126,15 @@ const API_BASE = '';
                 });
 
                 if (!response.ok) throw new Error('Failed to update status');
-                
+
                 console.log(`Order ${orderId} status updated to: ${newStatus}`);
+
+                // If user picked up, redirect so claimed_orders.html refreshes with the new status
+                if (newStatus === 'Picked Up') {
+                    window.location.href = 'claimed_orders.html';
+                    return;
+                }
+
                 // Reload the page to refresh the data
                 loadReadyOrders();
             } catch (error) {

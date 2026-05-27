@@ -60,7 +60,7 @@ npm start
 2. Run `npm install`
 3. Make sure MySQL is running
 4. Run `npm start`
-5. Confirm the backend via `http://localhost:3002/api/health`
+5. Confirm the backend via `https://labadami.onrender.com/api/health`
 
 ## 📊 Sales Report Features
 
@@ -95,7 +95,7 @@ npm start
 ## 🛠️ Troubleshooting
 
 ### "Failed to load sales data"
-- Check if server is running: `http://localhost:3002/api/health`
+- Check if server is running: `https://labadami.onrender.com/api/health`
 - Verify MySQL connection in `server/.env`
 - Check browser console for detailed errors
 

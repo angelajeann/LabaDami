@@ -9,7 +9,14 @@
 <body>
    
 
-    </header>
+    <a href="dashboard.html" class="brand-link" aria-label="LabaDami">
+        <div class="brand-top-left">
+            <h1 class="brand-title">LabaDami</h1>
+            <h2 class="brand-subtitle">Quick and Quality Laundry Services</h2>
+            <p class="brand-tagline">Track every load. Serve every customer better.</p>
+        </div>
+    </a>
+
     <nav>
         <ul>
             <li><a href="dashboard.html">Dashboard</a></li>
@@ -22,6 +29,7 @@
             <li><a href="index.html">Log Out</a></li>
         </ul>
     </nav>
+
     <div class="container">
         <h2>Claimed Orders</h2>
         <p>Orders that have been successfully picked up by customers.</p>
@@ -60,7 +68,6 @@
 
         async function loadClaimedOrders() {
             try {
-                const response = await fetch(`${API_BASE}/orders`);
                 if (!response.ok) throw new Error('Failed to fetch orders');
                 
                 const allOrders = await response.json();
