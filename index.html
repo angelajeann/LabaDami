@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laundry Shop Management System</title>
+    <title>Web-based Laundry Shop Management System</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Great+Vibes&display=swap" rel="stylesheet">
     <style>
@@ -13,7 +13,7 @@
             box-sizing: border-box;
         }
         body::before {
-            content: '';
+           content: '';
             position: fixed;
             top: 0;
             left: 0;
@@ -24,62 +24,47 @@
             background-position: center;
             background-repeat: repeat;
             filter: blur(2px) brightness(.55);
+
             z-index: -1;
         }
         body {
             position: relative;
         }
         header {
-            backdrop-filter: blur(10px);
-            color: #333;
-            padding: 20px 40px;
+            filter:none;
+            color: #0d47a1;
+            padding: 18px 10px;
             display: flex;
-            justify-content: center;
+            justify-content: flex-start;
             align-items: center;
             box-shadow: 0 2px 20px rgba(0,0,0,0.1);
             position: fixed;
             top: 0;
             left: 0;
-            right: 0;
+            right: auto;
             z-index: 1000;
         }
         header h1 {
             font-size: 24px;
             font-weight: 700;
             letter-spacing: 1px;
-            background: linear-gradient(135deg, #263475 0%, rgb(31, 64, 153) 100%);
+            background: linear-gradient(135deg, #0d47a1 0%, #42a5f5 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+        
             background-clip: text;
         }
         .login-wrapper {
             display: flex;
             min-height: 100vh;
-            align-items: center;
+            align-items: left;
             padding-top: 80px; /* Account for fixed header */
         }
-        .login-left {
-            width: 45%;
-            background: linear-gradient(135deg, #183557 0%, #312670 100%);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 60px 40px;
-            color: white;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
+       
+        
+        /* Removed the background frame/glow behind the LabaDami text */
         .login-left::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-            animation: float 6s ease-in-out infinite;
+            content: none;
         }
         @keyframes float {
             0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
@@ -89,14 +74,29 @@
             font-size: 80px;
             font-weight: 700;
             margin-bottom: 20px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            color: #ffffff;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.25);
             position: relative;
             z-index: 2;
+        }
+        .login-left {
+            width: 45%;
+            background: transparent;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 90px 40px;
+            color: white;
+            text-align: left;
+            position: relative;
+            overflow: visible;
         }
         .login-left .tagline {
             font-size: 28px;
             font-family: 'Great Vibes', cursive;
-            margin-bottom: 15px;
+            margin: 0;
+            padding: 0;
             font-weight: 400;
             opacity: 0.95;
             position: relative;
@@ -107,6 +107,7 @@
             opacity: 0.9;
             line-height: 1.6;
             max-width: 300px;
+            margin: 0;
             position: relative;
             z-index: 2;
         }
@@ -170,7 +171,7 @@
             font-size: 16px;
             transition: all 0.3s ease;
             background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(15px);
         }
         input:focus {
             outline: none;
@@ -249,7 +250,7 @@
 </head>
 <body>
     <header>
-        <h1>Laundry Shop Management System</h1>
+        
     </header>
     <div class="login-wrapper">
         <div class="login-left">

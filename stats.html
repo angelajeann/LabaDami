@@ -78,11 +78,11 @@
             <div class="stats-grid">
                 <div class="stat-item">
                     <h4>Total Revenue</h4>
-                    <p id="totalRevenue">₹0</p>
+                    <p id="totalRevenue"> ₱0</p>
                 </div>
                 <div class="stat-item">
                     <h4>Average Order Value</h4>
-                    <p id="avgOrderValue">₹0</p>
+                    <p id="avgOrderValue"> ₱0</p>
                 </div>
                 <div class="stat-item">
                     <h4>Total Weight Processed</h4>
@@ -197,8 +197,8 @@
             document.getElementById('pendingOrders').textContent = pendingOrders;
             document.getElementById('readyOrders').textContent = readyOrders;
             document.getElementById('claimedOrders').textContent = claimedOrders;
-            document.getElementById('totalRevenue').textContent = '₹' + (summary.totalRevenue || 0).toFixed(2);
-            document.getElementById('avgOrderValue').textContent = '₹' + (summary.avgOrderValue || 0).toFixed(2);
+            document.getElementById('totalRevenue').textContent = ' ₱' + (summary.totalRevenue || 0).toFixed(2);
+            document.getElementById('avgOrderValue').textContent = ' ₱' + (summary.avgOrderValue || 0).toFixed(2);
             document.getElementById('totalWeight').textContent = (summary.totalWeight || 0).toFixed(1) + ' kg';
         }
 
@@ -216,7 +216,7 @@
                             <td>${stats.service}</td>
                             <td>${stats.orderCount}</td>
                             <td>${parseFloat(stats.totalWeight).toFixed(1)}</td>
-                            <td>₹${parseFloat(stats.totalRevenue).toFixed(2)}</td>
+                            <td> ₱${parseFloat(stats.totalRevenue).toFixed(2)}</td>
                             <td>${percentage}%</td>
                         </tr>
                     `;
@@ -235,8 +235,8 @@
             document.getElementById('pendingOrders').textContent = '0';
             document.getElementById('readyOrders').textContent = '0';
             document.getElementById('claimedOrders').textContent = '0';
-            document.getElementById('totalRevenue').textContent = '₹0';
-            document.getElementById('avgOrderValue').textContent = '₹0';
+            document.getElementById('totalRevenue').textContent = ' ₱0';
+            document.getElementById('avgOrderValue').textContent = ' ₱0';
             document.getElementById('totalWeight').textContent = '0 kg';
             document.getElementById('uniqueCustomers').textContent = '0';
             document.getElementById('serviceStatsBody').innerHTML = '<tr><td colspan="5" class="no-data">No data available</td></tr>';

@@ -51,7 +51,7 @@
     <div class="container">
         <h2>Order History</h2>
         <p>Complete history of all orders in the system.</p>
-        
+
         <div class="table-container">
             <table id="historyTable">
                 <thead>
@@ -77,15 +77,11 @@
     </div>
 
     <script>
-const API_BASE = '';
-
+        const API_BASE = 'https://labadami.onrender.com';
 
         function formatCurrency(amount) {
             if (amount === null || amount === undefined || amount === '') return '-';
             const value = parseFloat(amount);
-
-
-
             return Number.isFinite(value) ? '₹' + value.toFixed(2) : '-';
         }
 
@@ -93,44 +89,49 @@ const API_BASE = '';
             try {
                 const response = await fetch(`${API_BASE}/api/orders`);
                 if (!response.ok) throw new Error('Failed to fetch orders');
-                
+
                 const orders = await response.json();
                 const tbody = document.getElementById('historyBody');
-                
-                if (orders.length === 0) {
+
+                if (!Array.isArray(orders) || orders.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="9" class="no-data">No order history available</td></tr>';
                     return;
                 }
 
-                // Sort by creation date (newest first)
                 orders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
                 let html = '';
                 orders.forEach((order) => {
-                    const createdDate = new Date(order.created_at).toLocaleDateString();
-                    const updatedDate = new Date(order.updated_at).toLocaleDateString();
+                    const createdDate = order.created_at ? new Date(order.created_at).toLocaleDateString() : '-';
+                    const updatedDate = order.updated_at ? new Date(order.updated_at).toLocaleDateString() : '-';
+
                     html += `
                         <tr>
-                            <td>${order.id}</td>
-                            <td>${order.customerName}</td>
+                            <td>${order.id ?? '-'}</td>
+                            <td>${order.customerName ?? '-'}</td>
                             <td><span class="contact-badge">${order.email || order.contactNumber || 'N/A'}</span></td>
-                            <td>${order.service}</td>
-                            <td>${order.weight}</td>
+                            <td>${order.service ?? '-'}</td>
+                            <td>${order.weight ?? '-'}</td>
                             <td>${formatCurrency(order.totalAmount)}</td>
-                            <td><span class="status-badge status-${order.status.toLowerCase().replace(' ', '-')}">${order.status}</span></td>
+                            <td><span class="status-badge status-${String(order.status || '')
+                                .toLowerCase()
+                                .replace(' ', '-')}">${order.status ?? '-'}</span></td>
                             <td>${createdDate}</td>
                             <td>${updatedDate}</td>
                         </tr>
                     `;
                 });
-                
+
                 tbody.innerHTML = html;
             } catch (error) {
                 console.error('Error loading order history:', error);
-                document.getElementById('historyBody').innerHTML = '<tr><td colspan="9" style="color: red;">Error loading order history. Check if server is running.</td></tr>';
+                document.getElementById('historyBody').innerHTML =
+                    '<tr><td colspan="9" style="color: red;">Error loading order history. Check if server is running.</td></tr>';
             }
         }
 
-        // Load order history when page loads
         document.addEventListener('DOMContentLoaded', loadOrderHistory);
     </script>
+</body>
+</html>
+
