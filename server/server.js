@@ -204,7 +204,13 @@ app.post('/api/orders', async (req, res) => {
             status
         } = req.body;
 
+        // Optional: frontend may send customerName to ensure the customerName shown
+        // on order pages matches the customer that was actually created/selected.
+        // If provided, we keep the database customerName consistent.
+        const { customerName } = req.body;
+
         // Validation
+
         if (!customer_id || !service || !weight || !totalAmount) {
             return res.status(400).json({
                 error: 'Missing required fields'
@@ -212,6 +218,15 @@ app.post('/api/orders', async (req, res) => {
         }
 
         const connection = await pool.getConnection();
+
+        // If customerName was provided, keep customer record consistent
+        // (fixes cases where UI selection/name may not match due to duplicates).
+        if (customerName && String(customerName).trim()) {
+            await connection.query(
+                'UPDATE customers SET customerName = ? WHERE id = ?',
+                [String(customerName).trim(), customer_id]
+            );
+        }
 
         const [result] = await connection.query(
             `
@@ -227,6 +242,7 @@ app.post('/api/orders', async (req, res) => {
                 status || 'Pending'
             ]
         );
+
 
         connection.release();
 
@@ -269,7 +285,7 @@ app.get('/api/orders/status/:status', async (req, res) => {
                 c.customerName,
                 c.contactNumber
             FROM orders o
-            JOIN customers c ON o.customer_id = c.id
+            LEFT JOIN customers c ON o.customer_id = c.id
             WHERE o.status = ?
             ORDER BY o.created_at DESC
             `,
@@ -474,75 +490,137 @@ app.post('/api/send-email', async (req, res) => {
 
 // ============= SALES REPORTS API =============
 
+function buildOrdersFilters({ dateFrom, dateTo, service }) {
+    const where = [];
+    const params = [];
+
+    if (dateFrom) {
+        where.push('DATE(created_at) >= ?');
+        params.push(dateFrom);
+    }
+
+    if (dateTo) {
+        where.push('DATE(created_at) <= ?');
+        params.push(dateTo);
+    }
+
+    if (service) {
+        where.push('service LIKE ?');
+        params.push(`%${service}%`);
+    }
+
+    const whereSql = where.length ? ` WHERE ${where.join(' AND ')}` : '';
+    return { whereSql, params };
+}
+
 // Get sales summary
 app.get('/api/sales/summary', async (req, res) => {
+    const { dateFrom, dateTo, service } = req.query;
+
+    if (!isDbReady) {
+        return res.status(503).json({ error: 'Database not ready' });
+    }
+
     try {
         const connection = await pool.getConnection();
+        const { whereSql, params } = buildOrdersFilters({ dateFrom, dateTo, service });
+
         const [rows] = await connection.query(`
             SELECT
                 COUNT(*) as totalOrders,
-                SUM(totalAmount) as totalRevenue,
-                AVG(totalAmount) as avgOrderValue,
-                SUM(weight) as totalWeight
+                COALESCE(SUM(totalAmount), 0) as totalRevenue,
+                COALESCE(AVG(totalAmount), 0) as avgOrderValue,
+                COALESCE(SUM(weight), 0) as totalWeight
             FROM orders
-        `);
+            ${whereSql}
+        `, params);
+
         connection.release();
-        res.json(rows[0]);
+        res.json(rows[0] || {
+            totalOrders: 0,
+            totalRevenue: 0,
+            avgOrderValue: 0,
+            totalWeight: 0
+        });
     } catch (error) {
         console.error('Error fetching sales summary:', error);
-        res.status(500).json({ error: 'Failed to fetch sales summary' });
+        res.status(500).json({ error: 'Failed to fetch sales summary', details: error.message });
     }
 });
 
 // Get sales by service
 app.get('/api/sales/by-service', async (req, res) => {
+    const { dateFrom, dateTo, service } = req.query;
+
+    if (!isDbReady) {
+        return res.status(503).json({ error: 'Database not ready' });
+    }
+
     try {
         const connection = await pool.getConnection();
+        const { whereSql, params } = buildOrdersFilters({ dateFrom, dateTo, service });
+
         const [rows] = await connection.query(`
             SELECT
                 service,
                 COUNT(*) as orderCount,
-                SUM(weight) as totalWeight,
-                SUM(totalAmount) as totalRevenue,
-                AVG(totalAmount) as avgOrderValue
+                COALESCE(SUM(weight), 0) as totalWeight,
+                COALESCE(SUM(totalAmount), 0) as totalRevenue,
+                COALESCE(AVG(totalAmount), 0) as avgOrderValue
             FROM orders
+            ${whereSql}
             GROUP BY service
             ORDER BY totalRevenue DESC
-        `);
+        `, params);
+
         connection.release();
-        res.json(rows);
+        res.json(Array.isArray(rows) ? rows : []);
     } catch (error) {
         console.error('Error fetching sales by service:', error);
-        res.status(500).json({ error: 'Failed to fetch sales by service' });
+        res.status(500).json({ error: 'Failed to fetch sales by service', details: error.message });
     }
 });
 
 // Get daily sales
 app.get('/api/sales/daily', async (req, res) => {
+    const { dateFrom, dateTo } = req.query;
+
+    if (!isDbReady) {
+        return res.status(503).json({ error: 'Database not ready' });
+    }
+
     try {
         const connection = await pool.getConnection();
+        const { whereSql, params } = buildOrdersFilters({ dateFrom, dateTo, service: undefined });
+
         const [rows] = await connection.query(`
             SELECT
                 DATE(created_at) as date,
                 COUNT(*) as orderCount,
-                SUM(weight) as totalWeight,
-                SUM(totalAmount) as totalRevenue
+                COALESCE(SUM(weight), 0) as totalWeight,
+                COALESCE(SUM(totalAmount), 0) as totalRevenue
             FROM orders
+            ${whereSql}
             GROUP BY DATE(created_at)
             ORDER BY date DESC
             LIMIT 30
-        `);
+        `, params);
+
         connection.release();
-        res.json(rows);
+        res.json(Array.isArray(rows) ? rows : []);
     } catch (error) {
         console.error('Error fetching daily sales:', error);
-        res.status(500).json({ error: 'Failed to fetch daily sales' });
+        res.status(500).json({ error: 'Failed to fetch daily sales', details: error.message });
     }
 });
 
 // Get sales with date filtering
 app.get('/api/sales/filtered', async (req, res) => {
     const { dateFrom, dateTo, service } = req.query;
+
+    if (!isDbReady) {
+        return res.status(503).json({ error: 'Database not ready' });
+    }
 
     try {
         let query = `
@@ -573,12 +651,13 @@ app.get('/api/sales/filtered', async (req, res) => {
         const connection = await pool.getConnection();
         const [rows] = await connection.query(query, params);
         connection.release();
-        res.json(rows);
+        res.json(Array.isArray(rows) ? rows : []);
     } catch (error) {
         console.error('Error fetching filtered sales:', error);
-        res.status(500).json({ error: 'Failed to fetch filtered sales' });
+        res.status(500).json({ error: 'Failed to fetch filtered sales', details: error.message });
     }
 });
+
 
 // Health check endpoint for server status
 app.get('/api/health', (req, res) => {
