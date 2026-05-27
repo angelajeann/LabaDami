@@ -82,40 +82,58 @@
     </div>
 
     <script>
-        const API_BASE = 'https://labadami.onrender.com';
+const API_BASE = '';
 
-        async function loadDashboardData() {
-            try {
-                const ordersResponse = await fetch(`${API_BASE}/orders`);
-                const orders = await ordersResponse.json();
+async function loadDashboardData() {
+    try {
 
-                const totalOrders = orders.length;
-                const pendingOrders = orders.filter(order =>
-                    order.status === 'Pending' || order.status === 'Processing'
-                ).length;
-                const readyOrders = orders.filter(order => order.status === 'Ready').length;
-                const claimedOrders = orders.filter(order =>
-                    order.status === 'Picked Up'
-                ).length;
+        const ordersResponse = await fetch(`${API_BASE}/api/orders`);
 
-                document.getElementById('totalOrders').textContent = totalOrders;
-                document.getElementById('pendingOrders').textContent = pendingOrders;
-                document.getElementById('readyOrders').textContent = readyOrders;
-                document.getElementById('claimedOrders').textContent = claimedOrders;
-                document.getElementById('dashboardMessage').textContent = 'Welcome to the dashboard. Overview of the system.';
-            } catch (error) {
-                console.error('Error loading dashboard data:', error);
-                document.getElementById('dashboardMessage').textContent = 'Error loading dashboard data. Make sure the server is running on port 3002.';
-                document.getElementById('totalOrders').textContent = '0';
-                document.getElementById('pendingOrders').textContent = '0';
-                document.getElementById('readyOrders').textContent = '0';
-                document.getElementById('claimedOrders').textContent = '0';
-            }
+        // CHECK IF RESPONSE IS OK
+        if (!ordersResponse.ok) {
+            throw new Error(`HTTP error! Status: ${ordersResponse.status}`);
         }
 
-        document.addEventListener('DOMContentLoaded', loadDashboardData);
-    </script>
-</body>
-</html>
+        const orders = await ordersResponse.json();
 
+        console.log("Orders received:", orders);
 
+        const totalOrders = orders.length;
+
+        const pendingOrders = orders.filter(order =>
+            order.status === 'Pending' ||
+            order.status === 'Processing'
+        ).length;
+
+        const readyOrders = orders.filter(order =>
+            order.status === 'Ready'
+        ).length;
+
+        const claimedOrders = orders.filter(order =>
+            order.status === 'Picked Up'
+        ).length;
+
+        document.getElementById('totalOrders').textContent = totalOrders;
+        document.getElementById('pendingOrders').textContent = pendingOrders;
+        document.getElementById('readyOrders').textContent = readyOrders;
+        document.getElementById('claimedOrders').textContent = claimedOrders;
+
+        document.getElementById('dashboardMessage').textContent =
+            'Dashboard loaded successfully';
+
+    } catch (error) {
+
+        console.error('FULL ERROR:', error);
+
+        document.getElementById('dashboardMessage').textContent =
+            'Failed to load dashboard data';
+
+        document.getElementById('totalOrders').textContent = '0';
+        document.getElementById('pendingOrders').textContent = '0';
+        document.getElementById('readyOrders').textContent = '0';
+        document.getElementById('claimedOrders').textContent = '0';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', loadDashboardData);
+</script>

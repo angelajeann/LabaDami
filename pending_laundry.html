@@ -70,7 +70,7 @@
     </div>
 
     <script>
-        const API_BASE = 'https://labadami.onrender.com';
+const API_BASE = '';
 
         function formatCurrency(amount) {
             if (amount === null || amount === undefined || amount === '') return '-';
@@ -80,7 +80,7 @@
 
         async function loadPendingOrders() {
             try {
-                const response = await fetch(`${API_BASE}/orders/status/pending`);
+                const response = await fetch(`${API_BASE}/api/orders/status/Pending`);
                 if (!response.ok) throw new Error('Failed to fetch pending orders');
                 
                 const orders = await response.json();
@@ -128,7 +128,7 @@
 
         async function updateOrderStatus(orderId, newStatus) {
             try {
-                const response = await fetch(`${API_BASE}/orders/${orderId}/status`, {
+                const response = await fetch(`${API_BASE}/api/orders/${orderId}/status`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json'

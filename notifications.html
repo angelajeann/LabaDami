@@ -130,7 +130,7 @@
     </div>
 
     <script>
-        const API_BASE = 'https://labadami.onrender.com';
+const API_BASE = '';
         let currentOrderId = null;
         let pendingOrders = [];
         let readyOrders = [];
@@ -160,7 +160,7 @@
 
         async function loadPendingOrders() {
             try {
-                const response = await fetch(`${API_BASE}/orders/status/pending`);
+                const response = await fetch(`${API_BASE}/api/orders/status/pending`);
                 if (!response.ok) throw new Error('Failed to fetch orders');
                 pendingOrders = await response.json();
 
@@ -197,7 +197,7 @@
 
         async function loadReadyOrders() {
             try {
-                const response = await fetch(`${API_BASE}/orders/status/ready`);
+                const response = await fetch(`${API_BASE}/api/orders/status/ready`);
                 if (!response.ok) throw new Error('Failed to fetch ready orders');
                 readyOrders = await response.json();
 
@@ -226,7 +226,7 @@
 
         async function updateOrderStatus(orderId, newStatus) {
             try {
-                const response = await fetch(`${API_BASE}/orders/${orderId}/status`, {
+                const response = await fetch(`${API_BASE}/api/orders/${orderId}/status`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ status: newStatus })
@@ -270,7 +270,7 @@
                 const defaultMessage = `Hi ${order.customerName}, your laundry is ready for pickup! Service: ${order.service}. Total: ${formatCurrency(order.totalAmount)}.`;
                 const messageToSend = customMessage || defaultMessage;
 
-                const notifResponse = await fetch(`${API_BASE}/notifications`, {
+                const notifResponse = await fetch(`${API_BASE}/api/notifications`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -286,7 +286,7 @@
                     throw new Error(text || 'Failed to save notification');
                 }
 
-               const smsResponse = await fetch(`${API_BASE}/notifications`, {
+               const smsResponse = await fetch(`${API_BASE}/api/notifications`, {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json'
@@ -317,7 +317,7 @@
 
         async function loadNotificationHistory() {
             try {
-                const response = await fetch(`${API_BASE}/notifications`);
+                const response = await fetch(`${API_BASE}/api/notifications`);
                 if (!response.ok) throw new Error('Failed to fetch notifications');
                 const notifications = await response.json();
 
