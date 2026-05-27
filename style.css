@@ -1099,6 +1099,30 @@ table tr:hover {
     transition: all 0.3s ease;
 }
 
+/* Make small action buttons (Notify / Delete) same size */
+.btn-notify-small,
+.btn-delete-small {
+    min-width: 92px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 12px;
+    line-height: 1;
+    font-size: 13px;
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+
+.btn-delete-small {
+    background-color: #e74c3c;
+}
+
+.btn-delete-small:hover {
+    background-color: #c0392b;
+}
+
+
 .status-select:focus {
     outline: none;
     border-color: #27ae60;
