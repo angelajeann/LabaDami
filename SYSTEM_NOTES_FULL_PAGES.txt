@@ -1,0 +1,426 @@
+LAUNDRY MANAGEMENT SYSTEM — FULL WORKING NOTES (Frontend + Backend + DB + Deploy)
+
+============================================================
+1) SYSTEM OVERVIEW
+============================================================
+This project is a small web app:
+- Frontend: multiple HTML pages + shared style.css
+- Backend: Node.js + Express (REST API)
+- Database: MySQL (customers, orders, notifications)
+- SMS integration: FMC SMS gateway (server/txtfmcsms.js)
+
+Data flow (typical):
+1) User uses a frontend page (e.g., add_order.html)
+2) The page calls the backend REST API at /api/* using fetch
+3) Backend validates input and reads/writes MySQL
+4) Backend returns JSON
+5) Frontend renders tables/cards
+
+Order workflow is controlled by orders.status:
+- "Pending" / "Processing"  → laundry is not ready
+- "Ready"                    → SMS is sent (or re-sent) and order is ready
+- "Picked Up"               → claimed/finished by customer
+
+Problem this system solves:
+- Replaces manual tracking (paper/whatsapp) with a centralized order tracker for laundry shops.
+- Captures each customer’s details once (customer_id via unique contactNumber) and ties every laundry load to an order.
+- Lets staff update the progress (Pending → Ready → Picked Up) so the shop and customer know the correct state.
+- Automatically sends an SMS notification through FMC SMS when a load becomes Ready, reducing missed pickups and improving turnaround experience.
+- Provides reporting (sales summary/by-service/daily) so the shop can see revenue, average order value, weight processed, and top services over time.
+
+
+============================================================
+2) DEPLOYMENT (RENDER) VS LOCAL
+============================================================
+2.1 Frontend “API_BASE”
+Almost every page hard-codes:
+  const API_BASE = 'https://labadami.onrender.com';
+Then it calls endpoints like:
+  fetch(`${API_BASE}/api/orders`)
+
+So the frontend is pointing to a deployed backend hosted on Render.
+
+2.2 Backend listens on PORT and serves the API
+server/server.js:
+- Uses Express
+- Reads PORT from environment:
+    const PORT = process.env.PORT || process.env.SERVER_PORT || 3002;
+- Exposes endpoints under:
+    /api/...
+- Also serves static files:
+    app.use(express.static(path.join(__dirname, '..')));
+
+2.3 Health check
+server/server.js exposes:
+  GET /api/health
+Your README references:
+  https://labadami.onrender.com/api/health
+
+2.4 Railway
+No Railway-specific configuration was found in this repository (no Procfile/railway.toml references, and no “railway” strings in code/docs).
+The only hosting reference present is Render (labadami.onrender.com).
+
+============================================================
+3) DATABASE SCHEMA (MySQL)
+============================================================
+Schema file: server/database.sql
+
+Tables:
+
+3.1 customers
+- id (PK)
+- customerName
+- contactNumber (UNIQUE)
+- email (created in SQL but later dropped in the posted database.sql: ALTER TABLE customers DROP COLUMN email;)
+- created_at, updated_at
+
+Important note:
+- Backend code (server/server.js) does NOT use customers.email for orders.
+- Some frontend pages display order.email OR order.contactNumber; but orders query returns customerName and contactNumber.
+
+3.2 orders
+- id (PK)
+- customer_id (FK → customers.id)
+- service
+- weight
+- totalAmount
+- status (default 'Pending')
+- created_at, updated_at
+
+3.3 notifications
+- id (PK)
+- order_id (FK → orders.id)
+- customer_id (FK → customers.id)
+- contactNumber (the phone the SMS was sent to)
+- message
+- status (default 'Sent')
+- created_at
+
+============================================================
+4) BACKEND WORKING (Express + MySQL + SMS)
+============================================================
+Backend file: server/server.js
+
+4.1 Core setup
+- Express + CORS
+- express.json() to parse request body
+- express.static to serve frontend files from project root
+- MySQL pool via mysql2/promise
+
+4.2 DB readiness
+- isDbReady starts false
+- verifyDbConnection() tries SELECT 1
+- server still starts listening even if DB is not ready
+- endpoints return 503 if !isDbReady
+
+============================================================
+5) BACKEND API ENDPOINTS (WHAT EACH ONE DOES)
+============================================================
+All endpoints are under /api/*.
+
+5.1 Health
+GET /api/health
+Returns:
+- status: ok
+- uptime
+- timestamp
+
+5.2 Customers
+GET /api/customers
+- SELECT * FROM customers ORDER BY created_at DESC
+
+POST /api/customers
+Body:
+- { customerName, contactNumber }
+Logic:
+- If contactNumber already exists (unique), returns existing customer (HTTP 200)
+- Else inserts new customer (HTTP 201)
+
+DELETE /api/customers/:id
+- Deletes a customer. Cascades delete orders + notifications via FK ON DELETE CASCADE.
+
+5.3 Orders
+GET /api/orders
+- SELECT o.*, c.customerName, c.contactNumber
+- LEFT JOIN customers
+- ORDER BY o.created_at DESC
+
+POST /api/orders
+Body:
+- { customer_id, service, weight, totalAmount, status? , customerName? }
+Logic:
+- Validates required fields: customer_id, service, weight, totalAmount
+- If customerName provided, it updates customers.customerName for that customer_id
+- Inserts into orders with status||'Pending'
+- Returns: { orderId: <new id> }
+
+GET /api/orders/status/:status
+- Returns orders filtered by o.status
+- Includes id, customer_id, service, weight, totalAmount, status, created_at, customerName, contactNumber
+
+PUT /api/orders/:id/status
+Body:
+- { status }
+- Updates orders.status
+
+5.4 Notifications + SMS
+GET /api/notifications
+- SELECT n.*, c.customerName FROM notifications n JOIN customers c ...
+
+POST /api/notifications
+Expected body (frontend mostly uses these keys):
+- order_id
+- customer_id
+- phone OR contactNumber
+- message
+
+Backend flow:
+1) Validates required fields
+2) Checks order exists: SELECT id FROM orders WHERE id = ?
+3) Sends SMS:
+   await sendSmsFmc({ to: resolvedPhone, message })
+4) Inserts into notifications:
+   INSERT INTO notifications (order_id, customer_id, contactNumber, message, status) ...
+5) Updates the order:
+   UPDATE orders SET status = 'Ready' WHERE id = ?
+
+So:
+- successful SMS sending triggers order status → Ready
+
+5.5 Email endpoint (optional)
+POST /api/send-email
+- Uses nodemailer
+(This endpoint is present, but your current notifications.html uses FMC SMS calls.)
+
+5.6 Sales/Stats endpoints
+All are built using SQL filters on orders.created_at, service.
+
+- GET /api/sales/summary?dateFrom=&dateTo=&service=
+  Returns: totalOrders, totalRevenue, avgOrderValue, totalWeight
+
+- GET /api/sales/by-service?...
+  Returns an array grouped by service with orderCount, totalWeight, totalRevenue, avgOrderValue
+
+- GET /api/sales/daily?dateFrom=&dateTo=
+  Returns last 30 grouped days (date, orderCount, totalWeight, totalRevenue)
+
+- GET /api/sales/filtered?dateFrom=&dateTo=&service=
+  Returns detailed orders with customer info
+
+============================================================
+6) FRONTEND PAGES (EVERY PAGE) — EXACT API CALLS & UI LOGIC
+============================================================
+Each page uses API_BASE = https://labadami.onrender.com.
+
+6.1 index.html (Login)
+- Client-side only authentication:
+  - Username == 'admin' and Password == 'admin'
+  - Then redirects to dashboard.html
+- No API calls.
+
+6.2 dashboard.html
+Purpose: summary cards (Total Orders, Pending Laundry, Ready for Pick Up, Claimed Orders).
+API calls:
+- GET  /api/orders
+UI logic:
+- totalOrders = orders.length
+- pendingOrders = status in ['Pending','Processing']
+- readyOrders = status === 'Ready'
+- claimedOrders = status === 'Picked Up'
+
+6.3 add_order.html
+Purpose: create customer + create order.
+API calls:
+1) POST /api/customers
+   Body: { customerName, contactNumber }
+2) POST /api/orders
+   Body: { customer_id, customerName, service, weight, totalAmount }
+
+Flow:
+- UI calculates total from service price-per-kg * weight
+- When user confirms:
+  - createCustomer()
+  - createOrder() with returned customer.id
+- Shows success modal.
+
+6.4 orders.html
+Purpose: view/manage all current orders.
+API call:
+- GET /api/orders
+Actions per row:
+- Status dropdown triggers:
+  PUT /api/orders/:id/status
+  Body: { status: newStatus }
+- Notify button redirects to notifications.html?order=<orderId>
+- Delete Customer button calls:
+  DELETE /api/customers/:customerId
+  Then reloads orders.
+
+Note:
+- orders.html renders email column using order.email || order.contactNumber.
+- Backend order query doesn’t select email, so typically it shows contactNumber.
+
+6.5 pending_laundry.html
+Purpose: view only pending orders.
+API call:
+- GET /api/orders/status/Pending
+Actions:
+- Status dropdown triggers PUT /api/orders/:id/status
+  - If newStatus === 'Picked Up': redirect to claimed_orders.html
+- Notify redirects to notifications.html?order=<orderId>
+
+6.6 ready_pickup.html
+Purpose: view orders filtered by Ready.
+API calls:
+- GET /api/orders   (then filters client-side order.status === 'Ready')
+Actions:
+- Status dropdown triggers PUT /api/orders/:id/status
+  - If newStatus === 'Picked Up': redirect to claimed_orders.html
+- Notify Again redirects to notifications.html?order=<orderId>
+
+6.7 claimed_orders.html
+Purpose: view only orders claimed/picked up.
+API call:
+- GET /api/orders
+UI filters:
+- order.status === 'Picked Up'
+No update actions here.
+
+6.8 notifications.html
+Purpose: send notification + SMS, plus history.
+API calls (during initialize):
+- GET /api/orders/status/pending
+- GET /api/orders/status/ready
+- GET /api/notifications
+
+Key action: Send Notification & SMS
+When user clicks sendNotificationBtn:
+- It builds a default message:
+  Hi {customerName}, your laundry is ready for pickup! Service: {service}. Total: {amount}.
+  (or uses the typed message)
+
+Then it makes TWO POST requests:
+1) POST /api/notifications
+   Body: { order_id, customer_id, contactNumber, message }
+2) POST /api/notifications again (same body)
+
+Backend impact:
+- Each successful POST sends SMS and sets order.status = 'Ready'.
+- Because notifications.html posts twice, in the current code your gateway may send SMS twice and create duplicate notification records.
+
+After success:
+- reloads pending/ready lists and notification history.
+
+Modal fields:
+- modalCustomerName, modalContactNumber, modalService, modalTotalAmount
+
+6.9 history.html
+Purpose: table of all orders.
+API call:
+- GET /api/orders
+UI table includes:
+- id, customerName, email/contactNumber, service, weight, totalAmount, status, created_at, updated_at
+
+6.10 sales_report.html
+Purpose: sales analytics with filters.
+API calls (in loadSalesReport):
+- GET /api/sales/summary?dateFrom=&dateTo=&service=
+- GET /api/sales/filtered?dateFrom=&dateTo=&service=
+- GET /api/sales/by-service?dateFrom=&dateTo=&service=
+- GET /api/sales/daily?dateFrom=&dateTo=&service=
+
+UI:
+- summary cards
+- serviceSalesTable from /by-service
+- recentOrdersTable from /filtered (newest first, slice 20)
+- dailySalesTable from /daily
+
+Filters:
+- dateFrom and dateTo (from date inputs)
+- serviceFilter (Wash, Dry Cleaning, Ironing, Wash & Dry)
+
+6.11 stats.html
+Purpose: statistics dashboard.
+API calls:
+- GET /api/sales/summary
+- GET /api/orders (for counting statuses)
+- GET /api/sales/by-service (service breakdown)
+- GET /api/customers (to count unique customers)
+
+UI logic:
+- totalOrders = orders.length
+- pending = Pending + Processing
+- ready = Ready
+- claimed = Picked Up
+- service percentages = (service.orderCount / totalOrders) * 100
+
+6.12 total_orders.html
+Purpose: complete list of orders.
+API call:
+- GET /api/orders
+No additional filtering.
+
+============================================================
+7) SMS INTEGRATION (FMC SMS)
+============================================================
+File: server/txtfmcsms.js
+
+sendSmsFmc({to, message})
+- Reads env vars:
+  - FMC_SMS_API_URL
+  - FMC_SMS_API_KEY
+  - FMC_SMS_SENDER
+  - optional FMC_SMS_FROM_NUMBER
+- Normalizes phone numbers to digits only
+- Validates ToNumber has 10–15 digits
+- Determines FromNumber:
+  - uses FMC_SMS_FROM_NUMBER if valid 10–15 digits
+  - else tries FMC_SMS_SENDER if it looks like a valid phone number
+  - else throws
+- Tries multiple Authorization header formats
+- POSTs JSON:
+  { SenderName, ToNumber, MessageBody, FromNumber }
+
+============================================================
+8) IMPORTANT BEHAVIORAL NOTES / EDGE CASES
+============================================================
+1) Render vs local mismatch
+- Frontend uses https://labadami.onrender.com for APIs.
+- If you run backend locally on port 3002, your pages will still call Render unless you update API_BASE.
+
+2) notifications.html double POST
+- Current notifications.html code posts to /api/notifications twice.
+- Backend sends SMS each time and inserts a notification each time.
+
+3) database.sql email mismatch
+- database.sql shown earlier creates customers.email then drops it.
+- Backend doesn’t use customers.email for order listing.
+
+4) UI shows “email” column but backend order response doesn’t include it
+- orders.html/history.html use order.email || order.contactNumber.
+
+============================================================
+9) HOW TO RUN LOCALLY (DEV CHECKLIST)
+============================================================
+From SERVER_SETUP.md:
+1) Import schema:
+   mysql -u root -p < server/database.sql
+2) Configure server/.env:
+   DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT, SERVER_PORT
+   Also email and FMC SMS env vars if needed.
+3) Install deps:
+   cd server && npm install
+4) Start:
+   npm start
+5) Health:
+   http://localhost:3002/api/health
+
+But to make the HTML pages call your local backend, change all pages’ API_BASE from:
+  https://labadami.onrender.com
+to:
+  http://localhost:3002
+
+============================================================
+END OF NOTES
+============================================================
+

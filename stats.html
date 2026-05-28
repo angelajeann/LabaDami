@@ -171,8 +171,12 @@
                 }
 
 
+                // Coerce totalOrders safely (prevents percentage errors if API returns non-number)
+                const coercedTotalOrders = Number(summary.totalOrders) || 0;
+
+                // Update UI independently so one failed request doesn't block the breakdown
                 updateSummaryCards(summary, orders);
-                updateServiceStats(serviceStats, summary.totalOrders);
+                updateServiceStats(serviceStats, coercedTotalOrders);
                 updateCustomerCount(customers.length);
                 document.getElementById('statsMessage').textContent = 'Statistics loaded successfully.';
 
